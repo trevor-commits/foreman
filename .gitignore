@@ -1,0 +1,26 @@
+# foreman .gitignore
+
+# Agent run logs — kept locally for debugging, not committed by default.
+# To preserve a specific run's audit trail, remove it from this list:
+#   git add -f .agent-runs/2026-04-09-some-task/
+.agent-runs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Hook backups (created by hooks/install.sh)
+.git/hooks/*.bak
+
+# Secrets — should never be committed
+.env
+.env.*
+*.key
+*.pem
+secrets/

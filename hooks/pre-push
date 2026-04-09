@@ -1,0 +1,152 @@
+#!/usr/bin/env bash
+# =============================================================================
+# foreman — pre-push hook
+# Runs before any `git push`. Does two things:
+#   1. Blocks direct pushes to main/master (agents must use branches)
+#   2. Runs whatever test/lint/build gates exist in the repo
+#
+# Smart detection: looks for Python (pytest, ruff, mypy), Node (npm test/lint/build),
+# and Makefile targets. Skips checks cleanly if those tools aren't present.
+#
+# Gate failure blocks the push. All warnings are non-blocking.
+# To bypass in a genuine emergency: git push --no-verify
+# Install: hooks/install.sh copies this to .git/hooks/pre-push and chmod +x
+# =============================================================================
+
+set -euo pipefail
+
+REMOTE="$1"
+# URL="$2"  # available if needed
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+echo ""
+echo "🔍  foreman pre-push gate"
+echo "    Branch: $CURRENT_BRANCH → $REMOTE"
+echo ""
+
+# ── Block direct push to protected branches ───────────────────────────────────
+PROTECTED_BRANCHES=("main" "master" "production" "prod")
+for protected in "${PROTECTED_BRANCHES[@]}"; do
+  if [[ "$CURRENT_BRANCH" == "$protected" ]]; then
+    echo "❌  foreman: direct push to '$CURRENT_BRANCH' is not allowed."
+    echo ""
+    echo "    Open a PR from an agent branch instead:"
+    echo "      agent/<tool>/<YYYY-MM-DD>/<slug>"
+    echo ""
+    echo "    If you genuinely need to push directly: git push --no-verify"
+    echo ""
+    exit 1
+  fi
+done
+
+# ── Gate runner ───────────────────────────────────────────────────────────────
+GATE_PASSED=true
+RESULTS=()
+
+run_gate() {
+  local name="$1"
+  local cmd="$2"
+  local output
+  echo "    ▸ $name ..."
+  if output=$(eval "$cmd" 2>&1); then
+    RESULTS+=("  ✅  $name")
+  else
+    RESULTS+=("  ❌  $name — FAILED")
+    GATE_PASSED=false
+    echo ""
+    echo "$output" | head -40
+    echo ""
+  fi
+}
+
+skip_gate() {
+  local name="$1"
+  local reason="$2"
+  RESULTS+=("  ⏭️   $name (skipped: $reason)")
+}
+
+# ── Python gates ──────────────────────────────────────────────────────────────
+if [ -f "pyproject.toml" ] || [ -f "setup.py" ] || [ -f "setup.cfg" ] || [ -f "requirements.txt" ]; then
+  # pytest
+  if command -v pytest &>/dev/null || python -m pytest --version &>/dev/null 2>&1; then
+    run_gate "pytest" "python -m pytest --tb=short -q 2>&1"
+  else
+    skip_gate "pytest" "not installed"
+  fi
+
+  # ruff
+  if command -v ruff &>/dev/null || python -m ruff --version &>/dev/null 2>&1; then
+    run_gate "ruff (lint)" "python -m ruff check . 2>&1"
+  else
+    skip_gate "ruff" "not installed"
+  fi
+
+  # mypy (optional — only run if mypy config exists)
+  if [ -f "mypy.ini" ] || grep -q "\[tool.mypy\]" pyproject.toml 2>/dev/null; then
+    if command -v mypy &>/dev/null || python -m mypy --version &>/dev/null 2>&1; then
+      run_gate "mypy (types)" "python -m mypy . --ignore-missing-imports 2>&1"
+    else
+      skip_gate "mypy" "not installed"
+    fi
+  fi
+fi
+
+# ── Node / TypeScript gates ───────────────────────────────────────────────────
+if [ -f "package.json" ]; then
+  # npm test
+  if node -e "require('./package.json').scripts?.test" &>/dev/null 2>&1; then
+    run_gate "npm test" "npm test --if-present 2>&1"
+  else
+    skip_gate "npm test" "no test script in package.json"
+  fi
+
+  # npm lint
+  if node -e "const s=require('./package.json').scripts; if(!s||!s.lint) process.exit(1)" 2>/dev/null; then
+    run_gate "npm lint" "npm run lint 2>&1"
+  else
+    skip_gate "npm lint" "no lint script in package.json"
+  fi
+
+  # npm build (only if there's a build script and we're not in dev-only mode)
+  if node -e "const s=require('./package.json').scripts; if(!s||!s.build) process.exit(1)" 2>/dev/null; then
+    run_gate "npm build" "npm run build 2>&1"
+  else
+    skip_gate "npm build" "no build script in package.json"
+  fi
+fi
+
+# ── Makefile gates ────────────────────────────────────────────────────────────
+if [ -f "Makefile" ]; then
+  if make -n test &>/dev/null 2>&1; then
+    run_gate "make test" "make test 2>&1"
+  fi
+fi
+
+# ── Results ───────────────────────────────────────────────────────────────────
+echo ""
+echo "    Gate results:"
+for line in "${RESULTS[@]}"; do
+  echo "  $line"
+done
+echo ""
+
+if [ "$GATE_PASSED" = false ]; then
+  echo "❌  foreman: gate failed — push blocked."
+  echo "    Fix the failures above, then try again."
+  echo "    To bypass in a genuine emergency: git push --no-verify"
+  echo ""
+  exit 1
+fi
+
+# ── Warn if no gates actually ran ─────────────────────────────────────────────
+REAL_GATES=$(printf '%s\n' "${RESULTS[@]}" | grep -c "✅\|❌" || true)
+if [ "$REAL_GATES" -eq 0 ]; then
+  echo "⚠️   foreman: no gates ran — no test/lint/build tools detected."
+  echo "    Consider adding tests. Push proceeding, but this branch has no"
+  echo "    external verification. See AGENTS.md §3 for merge conditions."
+  echo ""
+fi
+
+echo "✅  foreman: gate passed — push proceeding."
+echo ""
+exit 0
