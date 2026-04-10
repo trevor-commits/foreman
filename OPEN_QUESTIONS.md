@@ -110,7 +110,7 @@ design question.
 
 ## #2 — Should server-side trailer enforcement (GitHub branch protection) be Phase 1.5 or Phase 2?
 
-**Status:** resolved — Phase 1.5, implement now
+**Status:** resolved — implemented in Phase 1.5
 
 **Resolution (from Codex's audit, April 9 2026):**
 Codex's verdict: "This should be Phase 1.5 now, not Phase 2 later. The reason is simple:
@@ -120,8 +120,11 @@ trailers plus branch protection is small, cheap, and immediately useful. Waiting
 2 couples a solved problem to a larger unsolved design."
 
 Agreed. Phase 1.5 is now an explicit step in the roadmap (see README.md and the Phased
-Rollout decision in DECISIONS.md). Server-side enforcement remains unimplemented in this
-repo as of the resolution date — it is the next concrete task.
+Rollout decision in DECISIONS.md). As of 2026-04-09, the implementation is now present in
+`foreman`, `Taxes`, and `bible-ai` via `.github/workflows/foreman-trailer-check.yml`.
+The workflow checks every non-merge commit on pushes and pull requests to `main`, enforces
+`Agent`, `Thread`, `Task`, and `Verified-By`, and preserves the local hook's warning-only
+behavior for missing or `none-yet` `Reviewed-By`.
 
 **Opened:** 2026-04-09 | **Resolved:** 2026-04-09
 

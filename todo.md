@@ -6,6 +6,7 @@ Capture the current goal plus the concrete dependency-ordered steps that are sti
 - Put audit-created actionable execution items at the top of this section so audit follow-through is the next queue to execute.
 - If the current chat creates or discovers more urgent execution-ready work than the existing queue reflects, persist and move that fresher work to the top of this section before handoff so the chat is not the only durable record.
 - When a step is verified complete, move or summarize it in `## Completed` instead of deleting the history.
+- Land the Phase 1.5 governance rollout across `foreman`, `Taxes`, and `bible-ai`: merge stale install branches, add GitHub trailer enforcement, resolve the audit-trail policy, ship the dispatcher prototype, refresh repo memory files, and push every reachable repo update | priority: P1 | owner: Trevor Gillette | target date: 2026-04-09
 
 ## Completed
 Preserve a durable completion trail for verified work instead of deleting it from active planning.
@@ -28,6 +29,13 @@ Each active branch entry should include:
 - `exit checklist`
 - `delete when` or `retain after close`
 - `retain reason` when not deleting
+- branch: `agent/codex/2026-04-09/phase15-governance`
+  source chat: 2026-04-09 "Work through Task 0-4 across foreman, Taxes, and bible-ai"
+  last refreshed by chat: same chat
+  purpose: land the Phase 1.5 trailer-check rollout, resolve the audit-trail decision, add the dispatcher prototype, and refresh downstream governance records
+  merge expectation: merge to `main` after the three repos are updated, committed, and pushed
+  exit checklist: merge stale downstream install branches; add trailer-check workflow in all three repos; resolve `OPEN_QUESTIONS.md` #5 and `DECISIONS.md`; add `scripts/foreman-dispatch.sh`; refresh `CLAUDE.md`; commit and push
+  delete when: after merge to `main`, downstream repos are pushed, and the branch history entry is written
 
 ## Branch History
 - No closed branch entries recorded yet.
