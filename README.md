@@ -150,10 +150,10 @@ Taxes `main` in the first real-world Phase 1 audit, April 9 2026).
 
 **Not affected:** Codex CLI, Claude Code CLI, and any agent invoked locally.
 
-**Partial mitigation today:** GitHub branch protection rules + a GitHub Actions
-workflow that validates the trailer schema server-side. This catches non-compliant
-pushes from any source. See `OPEN_QUESTIONS.md` #2 for the Phase 1.5 vs. Phase 2
-tradeoff discussion.
+**Planned Phase 1.5 mitigation:** GitHub branch protection rules + a GitHub Actions
+workflow that validates the trailer schema server-side. This would catch non-compliant
+pushes from any source including cloud agents. Neither exists yet in this repo.
+See `DECISIONS.md` for the Phase 1.5 resolution.
 
 **Long-term:** Phase 3 Dagger Container Use gives every agent an isolated local
 worktree where hooks DO fire. Phase 4 OpenClaw orchestration adds a supervisor layer

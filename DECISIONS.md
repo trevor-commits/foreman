@@ -16,12 +16,42 @@ Entry format:
 
 ---
 
+## 2026-04-09 — Codex Phase 1 Audit: Accepted Findings and Resolutions
+
+**Decision:** Accepted Codex's Phase 1 audit findings in full. Applied fixes to AGENTS.md,
+README.md, and CLAUDE.md. Updated two prior decisions. Opened two new OPEN_QUESTIONS entries.
+
+**Confirmed findings acted on:**
+- AGENTS.md overstated `Reviewed-By` as hard-enforced. Fixed: clarified it is warning-only in Phase 1, with the enforcement gap explicitly documented.
+- AGENTS.md and README.md implied branch naming was mechanically enforced. Fixed: added Phase 1 caveat noting it is convention-only; no hook validates the pattern.
+- README.md described GitHub Actions trailer enforcement as a mitigation that exists "today." Fixed: rewritten as a planned Phase 1.5 mitigation.
+- CLAUDE.md omitted `production`/`prod` from the pre-push block list, and omitted `squash!`/`WIP` from commit-msg skips. Fixed.
+- AGENTS.md § 9 (Hooks) was vague about what each hook actually does. Fixed: rewritten to match the actual hook behavior.
+- The gate described as "tests/lint/build" is a heuristic autodetector that may run nothing. Fixed: documented explicitly in AGENTS.md and CLAUDE.md.
+
+**Decision updates from Codex's disagreements:**
+- "Codex Mac App Is Not the Primary Agent Interface" — softened from "not viable" to "not safe as primary write path." Advisory/read-only use remains valid. See that entry.
+- "Phased Rollout" — Phase 3 and Phase 4 reframed as contingent options, not committed phases. Phase 1.5 added. See that entry.
+
+**Inferred finding (not experimentally proven in audit):**
+- Codex CLI on the local machine should fire local git hooks because it commits to the host checkout rather than a remote sandbox. This is inferred from the CLI's local-first interface, not tested end-to-end. See OPEN_QUESTIONS.md #3 (now resolved with caveats).
+
+**Agent:** codex (auditor) + claude-sonnet-4-6 (applied fixes)
+**Context:** Phase 1 audit, April 9 2026
+
+---
+
 ## 2026-04-09 — Codex Mac App Is Not the Primary Agent Interface
 
-**Decision:** The Codex Mac app is not a viable long-term agent interface for foreman-governed
-projects. Preferred interfaces are: Codex CLI, Claude Code CLI, or any agent that can be
-invoked programmatically via CLI or OAuth. The Mac app is deprioritized until it supports
-server-enforced hook compliance or equivalent.
+**Decision:** The Codex Mac app is not safe as a primary write path for foreman-governed repos
+until server-side enforcement exists. It is deprioritized for commit-and-push workflows.
+It may still be used as a read-only or advisory interface (e.g., for code review commentary,
+planning, or exploration that does not produce commits). Preferred write-path interfaces
+are: Codex CLI, Claude Code CLI, or any agent invoked locally where hooks fire normally.
+
+*Codex's audit (April 9 2026) correctly challenged an earlier formulation that banned the Mac
+app "entirely." The narrower policy — ban as write path, not ban from the system — is the
+right call. Updated accordingly.*
 
 **Why:** Phase 1 audited two Codex Mac app commits on Taxes `main` (`2f80ddf feat(web)` and
 `12b0d2d fix(web)`) and confirmed neither carried any foreman trailers (Agent, Thread, Task,
@@ -84,9 +114,15 @@ small tasks).
 
 ## 2026-04-09 — Phased Rollout: Branch Conventions Before Orchestration
 
-**Decision:** Build in four phases. Phase 1 is branch naming, commit trailers, and
-gate hooks. Phases 2–4 add cross-model review, container isolation, and orchestration
-— only after Phase 1 is stable and the real pain points are understood.
+**Decision:** Build in phases. Phase 1 (done) is branch naming, commit trailers, and gate
+hooks. Phase 1.5 (next) is server-side enforcement via GitHub Actions + branch protection.
+Phase 2 (likely) is the cross-model reviewer script. Phases 3 and 4 are contingent options,
+not commitments — they trigger only if measured pain justifies the complexity.
+
+*Codex's audit (April 9 2026) correctly flagged the original "four phases" framing as
+treating Phase 3 (Dagger) and Phase 4 (OpenClaw) as planned work. For a solo operator
+across a few personal projects, those phases may never pay for their complexity. Phase 1.5
+was added as an explicit step after the first real-world audit revealed the cloud-bypass gap.*
 
 **Why:** Building the full system at once (dispatcher + hooks + multi-agent harness +
 observability + dashboards) creates a new tooling project instead of reducing chaos.

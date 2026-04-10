@@ -16,62 +16,114 @@ Entry format:
 
 ---
 
-## #3 — Is there a programmatic (CLI/OAuth/API) interface into Codex that foreman can control?
+## #5 — Audit trail is gitignored: how do we make run evidence durable?
 
 **Status:** open
 
-**Background:** Trevor has ruled out the Codex Mac app as a long-term interface (see
-DECISIONS.md: "Codex Mac App Is Not the Primary Agent Interface"). The concern is scriptability:
-the Mac app can't be invoked by a dispatcher, can't have its model tier set programmatically,
-and its cloud sandbox bypasses local git hooks entirely. The question is whether Codex CLI or
-an OpenAI OAuth flow changes this picture enough to make Codex viable inside a foreman-governed
-workflow.
+**Background:** AGENTS.md (§ 8 Run Logging) says each agent run gets a folder under
+`.agent-runs/<YYYY-MM-DD>-<slug>/` containing `brief.md`, `review.md`, and `outcome.md`.
+This is described as "how you reconstruct what happened when an overnight run goes sideways."
+But `.gitignore` excludes `.agent-runs/` by default (confirmed in `.gitignore`). That means
+the audit trail the system claims to provide does not actually survive a re-clone, does not
+appear in `git log`, and is invisible to any agent or human starting a new session.
+
+This is a direct contradiction at the core of the system's auditability promise.
 
 **Options on the table:**
-1. **Codex CLI** (`codex` command) — appears to be scriptable; unknown whether it fires local
-   git hooks or runs in its own sandbox like the Mac app. Needs testing.
-2. **OpenAI API direct** — call `o3` or `o4-mini` as a raw API model from a foreman dispatcher
-   script, passing context and getting a diff back. Full control but loses the "agentic loop"
-   (no autonomous tool use without custom scaffolding).
-3. **Claude Code only** — drop Codex entirely and use Claude Code CLI for all agentic work.
-   Simpler dispatch, same hook compliance, one less interface to maintain.
-4. **OpenClaw/ACP harness** — spawns Claude Code and Codex as sub-agents with full hook
-   compliance and container isolation. This is Phase 4 in the roadmap; may be premature.
+1. **Commit run folders selectively:** Add `.agent-runs/` to `.gitignore` with an exception
+   pattern (e.g., `!.agent-runs/**/outcome.md`) so outcomes are committed but intermediate
+   working files are not.
+2. **Commit a single summary artifact per task:** After each run, the agent writes a one-file
+   summary to `runs/<branch-slug>.md` (not `.agent-runs/`) and commits it. Lean and durable.
+3. **Accept ephemeral local audit trail:** The current behavior is intentional — `.agent-runs/`
+   is scratch space; the commit trailer itself (`Agent`, `Thread`, `Task`, `Verified-By`,
+   `Reviewed-By`) is the durable artifact. The trailer schema already captures enough to
+   reconstruct what happened. Run folders are optional detail for active debugging only.
+4. **Separate audit store:** Write run outcomes to a separate repo or external store
+   (e.g., a private `foreman-runs` repo, an S3 bucket, a simple append-only JSON log).
 
-**Wanted:** An agent auditing this should: (a) confirm whether Codex CLI fires local git hooks
-on the host machine or runs in a sandbox, (b) assess whether Codex CLI is wirable into a simple
-dispatcher script, (c) recommend whether Option 2 or 3 is more practical at Phase 2 scale
-(a few personal projects, solo operator, no team).
+**Wanted:** A concrete recommendation on which option best fits solo-operator scale with
+minimal friction. Option 3 may be the right answer — but if so, AGENTS.md § 8 needs to be
+rewritten so it doesn't promise an audit trail that doesn't exist.
 
 **Opened:** 2026-04-09
 
 ---
 
-## #2 — Should server-side trailer enforcement (GitHub branch protection) be Phase 1.5 or Phase 2?
+## #4 — What does the Phase 2 dispatcher script actually look like?
 
 **Status:** open
 
-**Background:** Phase 1 enforcement uses local git hooks. These fire for local commits and pushes
-but are completely bypassed by cloud agents (Codex Mac app proven; likely any cloud-hosted agent
-that clones and pushes remotely). GitHub branch protection rules + a required status check
-(GitHub Actions CI that validates the trailer schema) would catch non-compliant commits from any
-source including cloud agents. This is a meaningful gap in Phase 1 that was discovered during
-the first real-world audit.
+**Background:** The roadmap describes Phase 2 as "a script that pipes any diff to a different
+model with a strict output schema, returns APPROVE / REQUEST_CHANGES / BLOCKER with reasons,
+wired into the pre-push hook." AGENTS.md describes a task brief format and model routing
+guide. But there is no executable contract for how a dispatcher would actually work — no
+defined CLI interface, no defined input/output schema, no decision about where it lives.
+
+Codex's audit (April 9 2026) flagged this as the second most important missing piece:
+"The repo has prose about model routing, task briefs, branch ledgers, and review, but it
+does not yet define the actual command surface that makes those things happen in a
+repeatable way. For your scale, a 100-line dispatcher script matters more than more
+roadmap prose."
 
 **Options on the table:**
-1. **Phase 1.5 (do it now, separately from Phase 2):** Set up branch protection on Taxes and
-   bible-ai repos. Add a small GitHub Actions workflow that checks for required trailers on every
-   push. Low complexity, high impact.
-2. **Fold into Phase 2:** The Phase 2 cross-model reviewer script will also need CI integration.
-   Combining them reduces the number of times we touch GitHub Actions config.
-3. **Skip it:** If we move away from cloud agents (see question #3), the gap closes itself.
-   Only revisit if a new cloud agent creates the same bypass problem.
+1. **Shell dispatcher:** `scripts/foreman-dispatch.sh` reads `brief.md`, classifies via
+   Haiku API call, creates the branch, ensures hooks are installed, shells out to
+   `codex exec` or `claude code`, then invokes the reviewer. Simple, no dependencies.
+2. **Python dispatcher:** Same logic in Python — easier to test, easier to parse structured
+   JSON from the classifier, easier to integrate with the Anthropic SDK for Phase 2.
+3. **Defer entirely:** Build Phase 1.5 (server-side enforcement) first, then design the
+   dispatcher based on what Phase 1.5 surfaces as the next pain point.
 
-**Wanted:** A recommendation on whether the gap is urgent enough to warrant a dedicated
-Phase 1.5 step, or whether waiting for Phase 2 CI integration is acceptable given the current
-scale (personal projects, solo operator, mostly CLI-based going forward).
+**Wanted:** A prototype dispatcher in Option 1 or 2 form that handles the minimum viable
+case: (a) classify task tier, (b) create a foreman-compliant branch, (c) invoke the agent
+CLI, (d) write a brief.md. Review wiring can be Phase 2.1.
 
 **Opened:** 2026-04-09
+
+---
+
+## #3 — Is there a programmatic (CLI/OAuth/API) interface into Codex that foreman can control?
+
+**Status:** resolved — see DECISIONS.md "Codex Mac App Is Not the Primary Agent Interface"
+
+**Resolution (from Codex's own audit, April 9 2026):**
+Codex CLI (codex-cli 0.118.0 as of April 9 2026) is a local-first CLI, not a copy of the
+Mac app's remote sandbox. It exposes local exec, explicit local sandbox modes, and separate
+experimental cloud commands with local apply. If Codex CLI runs `git commit` in the host
+checkout, local git hooks should fire — this is inferred from the CLI's local-first interface,
+not experimentally proven in a live end-to-end test.
+
+Codex's recommended dispatcher wiring: a shell or Python script reads the task brief,
+classifies the task, creates the branch, ensures hooks are installed, then shells out to
+`codex exec -C <repo> -m <model> -s workspace-write <prompt>`. After that, the dispatcher
+invokes a second-model reviewer, updates the branch ledger, and the normal local commit/push
+path enforces hooks.
+
+The updated policy: ban Codex Mac app as a write path; Codex CLI and Claude Code CLI are
+both viable for foreman-governed CLI dispatch. See OPEN_QUESTIONS.md #4 for the dispatcher
+design question.
+
+**Opened:** 2026-04-09 | **Resolved:** 2026-04-09
+
+---
+
+## #2 — Should server-side trailer enforcement (GitHub branch protection) be Phase 1.5 or Phase 2?
+
+**Status:** resolved — Phase 1.5, implement now
+
+**Resolution (from Codex's audit, April 9 2026):**
+Codex's verdict: "This should be Phase 1.5 now, not Phase 2 later. The reason is simple:
+it closes the only proven enforcement gap you have already hit in real use, and it is
+orthogonal to the cross-model reviewer work. A tiny GitHub Actions check for required
+trailers plus branch protection is small, cheap, and immediately useful. Waiting for Phase
+2 couples a solved problem to a larger unsolved design."
+
+Agreed. Phase 1.5 is now an explicit step in the roadmap (see README.md and the Phased
+Rollout decision in DECISIONS.md). Server-side enforcement remains unimplemented in this
+repo as of the resolution date — it is the next concrete task.
+
+**Opened:** 2026-04-09 | **Resolved:** 2026-04-09
 
 ---
 
@@ -89,18 +141,20 @@ This policy was set in the initial foreman session and hasn't been validated aga
 distributions. It's possible that Haiku 4.5 is underused (almost everything goes to Sonnet),
 or that the Opus 4.6 threshold is too high/low.
 
-**Options on the table:**
-1. **Keep current policy, revisit after 30 days of actual use** — let real task data inform
-   the policy rather than hypothesizing.
-2. **Add a middle tier:** Haiku for classification/routing only, Sonnet 4.6 for all
-   implementation including "easy" tasks, Opus only for architecture. This simplifies
-   the decision boundary.
-3. **Use task metadata to route:** The branch name slug and the task brief both contain
-   enough signal for a Haiku-based classifier to decide tier. Phase 2 dispatcher script
-   could do this automatically.
+**Codex's audit input (April 9 2026):**
+Auto-classification via a cheap dispatcher is practical at Phase 2 scale, but only with
+coarse buckets. The classifier should answer: "classification-only, normal implementation,
+or escalation-worthy?" — not fine-grained distinctions within a tier. Use a hybrid of Option
+2 and 3: Haiku for classification only, Sonnet for all real implementation including "easy"
+tasks, Opus only for architecture. The classifier prompt should read the task brief (not just
+the branch slug), acceptance criteria, changed-file set if available, and return structured
+JSON: `{ route, confidence, reason, escalation_triggers }`. Useful heuristics: file-count
+expectation, whether the task changes behavior or architecture, whether it touches risk areas
+(auth/data/migrations), whether acceptance criteria are crisp, whether failure is cheap to
+detect. If confidence is low, route upward automatically.
 
-**Wanted:** An assessment of whether Option 3 is practical at Phase 2 (a simple Python script
-that reads the task brief and outputs a recommended tier). What prompts work well for this kind
-of routing classification?
+**Wanted:** Validation against 30 days of real task distribution before locking the policy.
+Design the classifier prompt once Phase 1.5 is done and real task volume gives something to
+calibrate against.
 
 **Opened:** 2026-04-09

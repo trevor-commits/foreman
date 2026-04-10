@@ -24,6 +24,12 @@ Rules:
 - Review passes prefix with `review/<reviewer>-of-<coder>/`
 - Never push directly to `main` or `master`
 
+⚠️ **Phase 1 note:** This convention is documented but not mechanically enforced by a hook.
+The `pre-push` hook only blocks pushes to protected branch names (`main`, `master`,
+`production`, `prod`). It does not validate the naming pattern of the source branch.
+Branch naming compliance currently depends on agent discipline and human review.
+Hook-based branch name validation is planned for a future phase.
+
 ---
 
 ## 2. Commit Trailer Schema
@@ -53,7 +59,17 @@ Verified-By: pytest, ruff, mypy
 Reviewed-By: claude-sonnet-4-6
 ```
 
-The `commit-msg` hook enforces this. To bypass in a genuine emergency: `git commit --no-verify`.
+**Phase 1 enforcement detail:**
+- `commit-msg` hook **hard-rejects** commits missing `Agent`, `Thread`, `Task`, or `Verified-By`
+- `Reviewed-By` is **warning-only** in Phase 1 — the hook warns but does not block
+- Phase 2 will enforce `Reviewed-By` programmatically and verify it names a different model
+- Merge conditions (§ 3 below) still require a valid `Reviewed-By`; the gap is at commit time, not merge time
+
+⚠️ **Cloud agent bypass:** The `commit-msg` hook only fires when git runs on the local machine.
+Agents that commit from a remote cloud sandbox (confirmed: Codex Mac app) bypass it entirely.
+Server-side enforcement via GitHub Actions is the planned Phase 1.5 fix.
+
+To bypass in a genuine emergency: `git commit --no-verify` (document why in DECISIONS.md).
 
 ---
 
@@ -159,8 +175,10 @@ This is how you reconstruct what happened when an overnight run goes sideways.
 
 Run `hooks/install.sh` once after cloning this template into a new project.
 
-- `commit-msg` — rejects commits missing required trailers
-- `pre-push` — runs tests/lint/build gate; blocks direct push to main/master
+- `commit-msg` — hard-rejects commits missing `Agent`, `Thread`, `Task`, `Verified-By`; warns on missing/none-yet `Reviewed-By`; skips merge commits, squash!, fixup!, WIP, and wip
+- `pre-push` — heuristic gate: autodetects Python (pytest, ruff, optional mypy), Node (npm test/lint/build), or Makefile; reports all results; blocks on any failure; blocks direct push to `main`, `master`, `production`, `prod`
+
+Note: both hooks are **local only**. They do not fire for agents that commit from a remote sandbox.
 
 ## Global Mandatory Markers
 - [MANDATORY_STACK_RUNTIME] stack/runtime profile, risk areas, release gates, boundaries, rollback/ops checks

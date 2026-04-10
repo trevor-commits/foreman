@@ -68,8 +68,10 @@ See DECISIONS.md for full history.
 
 ## Gotchas
 
-- The pre-push hook blocks direct pushes to main/master. Use `git push --no-verify`
-  only in genuine emergencies, and note why in the commit or DECISIONS.md.
-- The commit-msg hook skips merge commits and fixup commits automatically.
-- `.agent-runs/` is gitignored by default. Add specific run folders if you want
-  to preserve an audit trail in the repo history.
+- The pre-push hook blocks direct pushes to `main`, `master`, `production`, and `prod`.
+  Use `git push --no-verify` only in genuine emergencies, and note why in DECISIONS.md.
+- The commit-msg hook skips merge commits, fixup commits, squash! commits, and WIP/wip prefixes.
+- The commit-msg hook hard-enforces `Agent`, `Thread`, `Task`, `Verified-By`. `Reviewed-By` is warning-only in Phase 1.
+- The pre-push gate is heuristic autodetection (pytest/ruff/mypy, npm, or make). It may run nothing if no test runner is found. It is not a guaranteed full-stack gate.
+- Both hooks are **local only** — cloud-sandbox agents bypass them. Server-side enforcement (Phase 1.5) is the fix.
+- `.agent-runs/` is gitignored by default, meaning the audit trail is local-only and does not survive a re-clone. See OPEN_QUESTIONS.md #5.
