@@ -16,6 +16,46 @@ Entry format:
 
 ---
 
+## 2026-04-09 — Commit Trailers Are The Durable Audit Trail
+
+**Decision:** `.agent-runs/` is optional local scratch space only. The durable audit trail
+for foreman-governed work is the commit trailer schema plus tracked repo-visible records
+such as `BRANCH_LEDGER.md`, `DECISIONS.md`, and `todo.md` audit/history entries.
+
+**Why:** `.agent-runs/` is gitignored by default, so it does not survive a re-clone and
+cannot serve as the system of record. The commit trailer schema already captures the key
+who/what/how-verified fields in a durable, tool-agnostic place, and tracked repo files are
+better suited for long-lived branch, audit, and decision context.
+
+**Alternatives Considered:** Committing run folders selectively (rejected: adds noise and
+still leaves partial-history questions). Writing to a separate audit store (rejected:
+too much overhead for solo-operator scale). Treating `.agent-runs/` as the primary audit
+trail (rejected: not durable enough).
+
+**Agent:** codex-gpt-5
+**Context:** 2026-04-09 Phase 1.5 governance rollout
+
+---
+
+## 2026-04-09 — Phase 1.5 Trailer Enforcement Is Now Implemented
+
+**Decision:** GitHub Actions trailer enforcement is now active in `foreman`, `Taxes`, and
+`bible-ai` via `.github/workflows/foreman-trailer-check.yml`.
+
+**Why:** This closes the known gap where cloud or sandboxed agents can bypass local git
+hooks. The server-side workflow mirrors the local `commit-msg` hook semantics: it enforces
+`Agent`, `Thread`, `Task`, and `Verified-By`, skips merge/fixup/squash/WIP commits, and
+keeps `Reviewed-By` warning-only in Phase 1.
+
+**Alternatives Considered:** Deferring server-side enforcement until Phase 2 (rejected:
+the gap was already proven in real use and did not need to wait on the larger reviewer
+design).
+
+**Agent:** codex-gpt-5
+**Context:** 2026-04-09 Phase 1.5 governance rollout
+
+---
+
 ## 2026-04-09 — Codex Phase 1 Audit: Accepted Findings and Resolutions
 
 **Decision:** Accepted Codex's Phase 1 audit findings in full. Applied fixes to AGENTS.md,

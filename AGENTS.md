@@ -160,14 +160,26 @@ After starting a new task, add a row to `BRANCH_LEDGER.md`.
 
 ## 8. Run Logging
 
-Each agent run gets a folder: `.agent-runs/<YYYY-MM-DD>-<slug>/`
+`.agent-runs/<YYYY-MM-DD>-<slug>/` is optional local scratch space for active
+debugging, task briefs, reviewer notes, or temporary outcome notes.
 
-Minimum contents:
-- `brief.md` — the task brief (written before starting)
-- `review.md` — the second-model reviewer's verdict (written after)
-- `outcome.md` — what was done, what passed, what was skipped, final status
+When used, recommended contents are:
+- `brief.md` — the task brief
+- `review.md` — a second-model review note
+- `outcome.md` — a local summary of what was done
 
-This is how you reconstruct what happened when an overnight run goes sideways.
+This folder is **not** the primary audit trail. It may be gitignored and may not
+survive a re-clone.
+
+The durable audit artifact is the commit history plus tracked repo records:
+- commit trailers (`Agent`, `Thread`, `Task`, `Verified-By`, `Reviewed-By`)
+- `BRANCH_LEDGER.md`
+- `DECISIONS.md`
+- tracked audit/history entries in `todo.md` when present
+
+If a result must survive beyond the current machine or active debug loop, record
+it in a committed file or in the commit trailer schema instead of relying on
+`.agent-runs/` alone.
 
 ---
 
