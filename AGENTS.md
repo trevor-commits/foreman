@@ -273,3 +273,9 @@ Note: both hooks are **local only**. They do not fire for agents that commit fro
 - [MANDATORY_TASK_CLASSIFICATION] classify task tier per `TASK_CLASSIFICATION.md`; match verification depth and playbook loading to tier
 - [MANDATORY_TRUST_GATE] evaluate Trust Gate triggers at session intake per `session-intake-closeout` skill; when `on`, require `Evidence Checked`, `Decision Status` labels (`Confirmed` / `Inferred` / `Needs More Evidence` / `Do Not Do Yet`), `Challenge Findings`, and `Unresolved` sections at closeout; no polished final recommendation for uncertain items
 - [MANDATORY_ANTI_THRASH] after 2 grounded attempts at the same problem, narrow scope, request the smallest missing artifact, or escalate; do not retry unchanged approach
+
+## Communication Defaults
+- Default to terse execution. Assume the user wants the shortest useful response unless they ask for depth.
+- Keep routine implementation closeouts compact: outcome + verification + blocker/risk only.
+- Do not restate obvious plans, commands, or touched files unless they materially help the user.
+- Trust-gated or other high-stakes answers should still include required sections, but keep them compact and decision-focused.
