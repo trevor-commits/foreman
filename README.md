@@ -123,17 +123,16 @@ The `pre-push` hook blocks direct pushes to `main`, `master`, `production`, and 
 
 ---
 
-## Model Routing (Phase 1 manual guide)
+## Model Routing (Phase 2 default guide)
 
 | Task type | Model | Reasoning level |
 |-----------|-------|-----------------|
-| Trivial edits, renames, small isolated fixes | Haiku 4.5 | low |
 | Standard feature work, refactors, writing tests | Sonnet 4.6 | medium |
 | Architecture, hard debugging, ambiguous requirements | Opus 4.6 | high |
 | Reviewing another model's output | **Different model than author** | medium |
 
+Phase 2 skips the Haiku classifier for now and defaults real implementation work to Sonnet.
 The reviewer must always be a different model than the one that wrote the code.
-Phase 2 will enforce this with an automated script.
 
 ---
 
@@ -150,18 +149,21 @@ Taxes `main` in the first real-world Phase 1 audit, April 9 2026).
 
 **Not affected:** Codex CLI, Claude Code CLI, and any agent invoked locally.
 
-**Planned Phase 1.5 mitigation:** GitHub branch protection rules + a GitHub Actions
-workflow that validates the trailer schema server-side. This would catch non-compliant
-pushes from any source including cloud agents. Neither exists yet in this repo.
-See `DECISIONS.md` for the Phase 1.5 resolution.
+**Phase 1.5 mitigation now active:** `.github/workflows/foreman-trailer-check.yml`
+validates the required trailers server-side on pushes and pull requests to `main`.
+This closes the known cloud-agent bypass gap for trailer enforcement even though the local
+hooks are still the main authoring-time safety net. See `DECISIONS.md` for the Phase 1.5
+resolution.
 
 **Long-term:** Phase 3 Dagger Container Use gives every agent an isolated local
 worktree where hooks DO fire. Phase 4 OpenClaw orchestration adds a supervisor layer
 that enforces conventions before any agent touches the repo.
 
-**Recommendation:** For foreman-governed work, use CLI agents (Claude Code, Codex CLI)
-rather than cloud-sandbox GUIs until server-side enforcement is in place. See
-`DECISIONS.md` entry "Codex Mac App Is Not the Primary Agent Interface" for full context.
+**Recommendation:** For foreman-governed work, still prefer CLI agents (Claude Code,
+Codex CLI) over cloud-sandbox GUIs because the local hook path and reviewer flow remain
+the most controllable authoring path even though trailer enforcement now also exists
+server-side. See `DECISIONS.md` entry "Codex Mac App Is Not the Primary Agent Interface"
+for full context.
 
 ---
 
@@ -178,16 +180,15 @@ overbuilding before you understand your actual failure modes.
 - commit-msg hook
 - ⚠️ Local hooks only — cloud-sandbox agents bypass them (see Known Limitation above)
 
-**Phase 1.5 — Server-side enforcement** *(optional, before Phase 2)*
-- GitHub branch protection rules on all foreman-governed repos
-- GitHub Actions workflow validating the trailer schema on every push
+**Phase 1.5 — Server-side enforcement** ✅ *implemented*
+- GitHub Actions workflow validating the trailer schema on every push and pull request to `main`
+- Branch protection can require that workflow where the downstream repo enables it
 - Closes the cloud-agent bypass gap without requiring Phase 2 infrastructure
 
-**Phase 2 — Cross-model reviewer script** *(coming next)*
-- A script that pipes any diff to a different model with a strict output schema
-- Returns APPROVE / REQUEST_CHANGES / BLOCKER with reasons
-- Wired into the pre-push hook as a soft or hard gate
-- Targets CLI agents (Claude Code CLI, Codex CLI) — scriptable and composable
+**Phase 2 — Cross-model reviewer script** ✅ *implemented as a soft gate*
+- `scripts/foreman-review.py` sends `git diff main...HEAD` to a different model than the author and requires a strict JSON verdict schema
+- `hooks/pre-push` now prints the reviewer verdict on every non-empty diff after the normal test/lint/build gates run
+- `BLOCKER` is advisory only in Phase 2; the push still proceeds while verdict quality is validated in real use
 
 **Phase 3 — Dagger Container Use** *(after Phase 2 is stable)*
 - Each agent gets its own isolated container + git worktree

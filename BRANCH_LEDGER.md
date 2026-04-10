@@ -12,6 +12,7 @@ Update this file when you open a branch (set status `open`) and when you close i
 
 | Branch | Agent | Date | Task | Merge Condition | Thread | Status | Notes |
 |--------|-------|------|------|-----------------|--------|--------|-------|
+| `agent/codex/2026-04-10/phase2-reviewer` | codex-gpt-5 | 2026-04-10 | Build the Phase 2 automated cross-model review path across the reviewer script, hook wiring, dispatcher note, and docs | decisions recorded, reviewer script written, pre-push wired as a soft gate, dispatcher updated, docs refreshed, smoke tests run, commit pushed | codex-desktop | open | Phase 2 implemented on this branch; awaiting merge review and any Phase 2.1 follow-up decisions |
 
 ---
 

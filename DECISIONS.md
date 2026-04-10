@@ -16,6 +16,71 @@ Entry format:
 
 ---
 
+## 2026-04-10 — Phase 2 Reviewer Uses Python, Not Shell
+
+**Decision:** The Phase 2 automated reviewer is implemented as `scripts/foreman-review.py`
+in Python instead of extending the shell dispatcher or shell hook logic to make API calls
+directly.
+
+**Why:** The reviewer must call external APIs, parse strict JSON reliably, handle large
+multi-line diffs without shell quoting bugs, and grow into structured output and fallback
+logic. Python is the safer implementation language for that job, while shell remains
+appropriate for small orchestration tasks such as branch setup and hook entrypoints.
+
+**Alternatives Considered:** Extending the shell prototype into a shell reviewer (rejected:
+fragile JSON parsing, weak multiline handling, and harder future API/schema support). Moving
+the whole dispatcher into Python immediately (rejected for now: the shell dispatcher already
+handles the current scaffolding use case and does not need the same complexity yet).
+
+**Agent:** codex-gpt-5
+**Context:** 2026-04-10 Phase 2 reviewer implementation
+
+---
+
+## 2026-04-10 — Phase 2 Reviewer Starts As A Soft Gate
+
+**Decision:** The Phase 2 reviewer verdict is advisory in the `pre-push` hook. The hook
+prints `APPROVE`, `REQUEST_CHANGES`, or `BLOCKER`, but a reviewer `BLOCKER` does not stop
+the push yet. Promotion to a hard gate is deferred to Phase 2.1 after two weeks of real use
+with no false `BLOCKER`s.
+
+**Why:** Cross-model review is the core value of foreman, but the system has not yet earned
+the right to block pushes automatically. A soft gate preserves the new signal immediately
+while collecting enough real-world data to determine whether the reviewer is trustworthy.
+A false `BLOCKER` means the reviewer claims a correct change is broken, unsafe, or
+non-compliant when it is actually valid.
+
+**Alternatives Considered:** Hard gate from day one (rejected: too risky before reviewer
+quality is calibrated). Reviewer output as a local-only manual step outside the hook
+(rejected: too easy to skip and not visible enough to shape behavior).
+
+**Agent:** codex-gpt-5
+**Context:** 2026-04-10 Phase 2 reviewer implementation
+
+---
+
+## 2026-04-10 — Phase 2 Model Routing Skips The Haiku Classifier
+
+**Decision:** Resolved OPEN_QUESTIONS.md #1. Phase 2 does not add a Haiku classifier yet.
+All real implementation work defaults to Sonnet-level routing, and the classifier is deferred
+to Phase 2.1 after the reviewer is stable.
+
+**Why:** The current task volume is too small to calibrate a classifier well, and a cheap
+router would add complexity before there is enough data to tune confidence thresholds or
+measure misroutes. The immediate value is the cross-model reviewer, not another decision
+layer ahead of it.
+
+**Alternatives Considered:** Adding the Haiku classifier in Phase 2 (rejected: extra moving
+parts before enough task volume exists to justify them). Sending trivial implementation work
+to Haiku immediately (rejected: not enough evidence yet that the savings outweigh the review
+and routing complexity). Deferring all routing guidance (rejected: Phase 2 still needs a
+clear default).
+
+**Agent:** codex-gpt-5
+**Context:** 2026-04-10 Phase 2 reviewer implementation
+
+---
+
 ## 2026-04-10 — Downstream Governance Docs Stay Manually Mirrored
 
 **Decision:** Chose Option A. Downstream repos keep their own `OPEN_QUESTIONS.md` and

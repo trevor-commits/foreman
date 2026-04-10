@@ -8,7 +8,7 @@
 # Smart detection: looks for Python (pytest, ruff, mypy), Node (npm test/lint/build),
 # and Makefile targets. Skips checks cleanly if those tools aren't present.
 #
-# Gate failure blocks the push. All warnings are non-blocking.
+# Gate failure blocks the push. The Phase 2 reviewer is advisory for now.
 # To bypass in a genuine emergency: git push --no-verify
 # Install: hooks/install.sh copies this to .git/hooks/pre-push and chmod +x
 # =============================================================================
@@ -145,6 +145,41 @@ if [ "$REAL_GATES" -eq 0 ]; then
   echo "    Consider adding tests. Push proceeding, but this branch has no"
   echo "    external verification. See AGENTS.md §3 for merge conditions."
   echo ""
+fi
+
+# ── Phase 2 reviewer (soft gate) ──────────────────────────────────────────────
+REVIEWER_SCRIPT="$(git rev-parse --show-toplevel)/scripts/foreman-review.py"
+
+if ! REVIEW_DIFF="$(git diff main...HEAD 2>/dev/null)"; then
+  echo "Reviewer: skipped (unable to diff against main)"
+elif [[ -z "${REVIEW_DIFF//[[:space:]]/}" ]]; then
+  echo "Reviewer: skipped (empty diff)"
+elif ! command -v python3 >/dev/null 2>&1; then
+  echo "Reviewer: skipped (dependencies not available)"
+elif ! python3 -c "import anthropic" >/dev/null 2>&1; then
+  echo "Reviewer: skipped (dependencies not available)"
+elif [ ! -f "$REVIEWER_SCRIPT" ]; then
+  echo "Reviewer: skipped (review script not available)"
+else
+  COMMIT_BODY="$(git log -1 --format=%B)"
+  AGENT_MODEL="$(printf '%s\n' "$COMMIT_BODY" | sed -n 's/^Agent:[[:space:]]*//p' | head -1)"
+  AGENT_MODEL="${AGENT_MODEL:-unknown}"
+
+  set +e
+  REVIEWER_OUTPUT="$(
+    printf '%s' "$REVIEW_DIFF" | \
+      python3 "$REVIEWER_SCRIPT" --author-model "$AGENT_MODEL" --branch "$CURRENT_BRANCH" - 2>&1
+  )"
+  REVIEWER_EXIT=$?
+  set -e
+
+  printf '%s\n' "$REVIEWER_OUTPUT"
+
+  if [ "$REVIEWER_EXIT" -eq 1 ]; then
+    echo "REVIEWER VERDICT: BLOCKER — soft gate active, push proceeding. Promote to hard gate after two weeks of validated use."
+  elif [ "$REVIEWER_EXIT" -ne 0 ]; then
+    echo "Reviewer: warning review script exited with status $REVIEWER_EXIT; push proceeding."
+  fi
 fi
 
 echo "✅  foreman: gate passed — push proceeding."

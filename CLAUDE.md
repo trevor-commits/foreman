@@ -20,12 +20,12 @@ Trevor Gillette — trevorgillette17@gmail.com
 
 ## Current Phase
 
-**Phase 1.5** — Branch conventions, commit trailers, local hooks, and GitHub Actions
-trailer enforcement are active. A shell dispatcher prototype now exists; cross-model
-review automation is still pending.
+**Phase 2** — Branch conventions, commit trailers, local hooks, GitHub Actions trailer
+enforcement, and automated cross-model review are active. The reviewer runs as a soft gate
+from `hooks/pre-push`, and the dispatcher now prints the post-run reviewer invocation.
 
 Phases still to build:
-- Phase 2: cross-model reviewer script (a different model reviews every diff)
+- Phase 2.1: hard-gate promotion, Haiku classifier reconsideration, and OpenAI fallback validation
 - Phase 3: Dagger Container Use (isolation for parallel agents)
 - Phase 4: OpenClaw orchestration (if still needed after Phase 3)
 
@@ -53,15 +53,22 @@ Completed through 2026-04-10:
 - `scripts/foreman-dispatch.sh` exists as the minimum shell dispatcher scaffold
 - `PROJECT_INTENT.md` is now filled with the actual Phase 1 / Phase 1.5 purpose, scope, and constraints
 - downstream governance-doc sync is intentionally manual for now; downstream copies stay repo-local until drift costs justify automation
+- Phase 2 reviewer automation is now implemented via `scripts/foreman-review.py`
+- `hooks/pre-push` now runs the reviewer after the existing gates and reports `APPROVE` / `REQUEST_CHANGES` / `BLOCKER` as a soft gate
+- `scripts/foreman-dispatch.sh` now prints the exact post-run reviewer command for the author to run manually
 
 Skipped or caveated:
-- No second-model review automation yet; `Reviewed-By` remains warning-only
+- `Reviewed-By` remains warning-only at commit time even though the reviewer now returns a concrete `reviewer_model`
 - downstream governance-doc copies can still drift between sync passes because manual mirroring was kept by design
+- hard-gating reviewer `BLOCKER`s is deferred to Phase 2.1 pending two weeks of use with no false `BLOCKER`s
+- the OpenAI reviewer path for Claude-authored diffs still needs explicit live validation once `OPENAI_API_KEY` is available
+- the default system `python3` in this environment still lacks `anthropic` and `openai`, so the local `pre-push` reviewer will skip until those packages are installed into a usable interpreter or venv
 
 Next session should:
-- decide whether to promote the shell dispatcher into a real CLI-invoking Phase 2 dispatcher
+- validate whether reviewer `BLOCKER`s are accurate enough to promote to a hard gate after two weeks of use
+- decide whether Phase 2.1 should add the deferred Haiku classifier after enough task-volume evidence exists
+- validate the OpenAI reviewer path and the Claude-fallback path with live credentials
 - validate the trailer-check workflow from a hosted runner rather than syntax-only/local inspection
-- add the reviewer wiring / merge gate that Phase 2 still promises
 
 ## Recent Decisions
 
@@ -71,6 +78,8 @@ See DECISIONS.md for full history.
   `.agent-runs/` is scratch space only.
 - **2026-04-10** — Downstream governance docs remain manually mirrored at current scale;
   accept limited drift rather than adding sync machinery now.
+- **2026-04-10** — Phase 2 review automation uses Python, runs as a soft gate first,
+  and defers the Haiku classifier to Phase 2.1.
 - **2026-04-09** — Phase 1.5 server-side trailer enforcement is now active in `foreman`,
   `Taxes`, and `bible-ai`.
 - **2026-04-09** — Adopted Codex's phased approach to avoid overbuilding: branch ledger
@@ -86,8 +95,11 @@ See DECISIONS.md for full history.
 - The pre-push hook blocks direct pushes to `main`, `master`, `production`, and `prod`.
   Use `git push --no-verify` only in genuine emergencies, and note why in DECISIONS.md.
 - The commit-msg hook skips merge commits, fixup commits, squash! commits, and WIP/wip prefixes.
-- The commit-msg hook hard-enforces `Agent`, `Thread`, `Task`, `Verified-By`. `Reviewed-By` is warning-only in Phase 1.
+- The commit-msg hook hard-enforces `Agent`, `Thread`, `Task`, `Verified-By`. `Reviewed-By` is still warning-only at commit time in Phase 2.
 - The pre-push gate is heuristic autodetection (pytest/ruff/mypy, npm, or make). It may run nothing if no test runner is found. It is not a guaranteed full-stack gate.
+- The Phase 2 reviewer is advisory only for now. A `BLOCKER` verdict is reported loudly but does not stop the push yet.
+- The pre-push hook skips reviewer execution entirely if `python3` or the `anthropic` package is unavailable.
+- `scripts/foreman-review.py` skips live review if the required API key is missing and writes `.agent-runs/last-review.json` only when it has an actual review payload.
 - Local hooks still matter, but `.github/workflows/foreman-trailer-check.yml` now covers
   the server-side enforcement gap for pushes and pull requests to `main`.
 - `.agent-runs/` is optional local scratch space only. Durable audit context lives in

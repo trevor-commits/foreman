@@ -59,10 +59,15 @@ Verified-By: pytest, ruff, mypy
 Reviewed-By: claude-sonnet-4-6
 ```
 
-**Phase 1 enforcement detail:**
+In Phase 2, when automated review runs, `Reviewed-By:` should be populated with the exact
+`reviewer_model` value returned by `scripts/foreman-review.py` in `.agent-runs/last-review.json`
+instead of being left as `none-yet`.
+
+**Phase 2 enforcement detail:**
 - `commit-msg` hook **hard-rejects** commits missing `Agent`, `Thread`, `Task`, or `Verified-By`
-- `Reviewed-By` is **warning-only** in Phase 1 — the hook warns but does not block
-- Phase 2 will enforce `Reviewed-By` programmatically and verify it names a different model
+- `Reviewed-By` is still **warning-only** at commit time — the hook warns but does not block
+- `scripts/foreman-review.py` now returns the reviewer model name that should populate `Reviewed-By`
+- Reviewer `BLOCKER` verdicts are a soft gate in Phase 2 and do not block pushes yet; Phase 2.1 may promote them after two weeks of validated use with no false `BLOCKER`s
 - Merge conditions (§ 3 below) still require a valid `Reviewed-By`; the gap is at commit time, not merge time
 
 ⚠️ **Cloud agent bypass:** The `commit-msg` hook only fires when git runs on the local machine.
@@ -111,16 +116,18 @@ Template:
 
 ## 5. Model Routing Guide
 
-Use this until a dispatcher script is in place:
+Phase 2 routing policy:
 
 | Task type | Model | Reasoning level |
 |-----------|-------|-----------------|
-| Trivial edits, renames, small isolated fixes | Haiku 4.5 | low |
 | Standard feature work, refactors, test writing | Sonnet 4.6 | medium |
 | Architecture, hard debugging, ambiguous requirements | Opus 4.6 | high |
 | Reviewing another model's output | Different model than author | medium |
 
-Key rule: the reviewer must always be a different model than the one that wrote the code.
+Notes:
+- Skip the Haiku classifier in Phase 2. Default real implementation work to Sonnet until
+  Phase 2.1 has enough reviewer/routing evidence to justify a classifier.
+- Key rule: the reviewer must always be a different model than the one that wrote the code.
 
 ---
 

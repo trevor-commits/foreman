@@ -59,7 +59,7 @@ notes when a task benefits from them.
 
 ## #4 — What does the Phase 2 dispatcher script actually look like?
 
-**Status:** investigating — shell prototype exists
+**Status:** resolved — implemented in Phase 2
 
 **Background:** The roadmap describes Phase 2 as "a script that pipes any diff to a different
 model with a strict output schema, returns APPROVE / REQUEST_CHANGES / BLOCKER with reasons,
@@ -86,14 +86,18 @@ roadmap prose."
 `scripts/foreman-dispatch.sh`. The script reads a `brief.md`, extracts `Model:` and
 `Reasoning Level:` with defaults of `sonnet` / `medium`, prints the resolved model tier and
 foreman-compliant branch name, creates the branch when it can, and warns if the local
-`commit-msg` hook is missing. It does not yet classify tasks via an API call or invoke an
-agent CLI/reviewer.
+`commit-msg` hook is missing. Phase 2 now extends that scaffold by printing the exact
+post-run reviewer invocation the agent should run locally after producing a diff:
+`git diff main...HEAD | python3 scripts/foreman-review.py --author-model <resolved-model> --branch <branch-name> -`.
+The reviewer itself is wired into `hooks/pre-push`, so the dispatcher remains informational
+instead of becoming a second execution path.
 
-**Wanted:** A prototype dispatcher in Option 1 or 2 form that handles the minimum viable
-case: (a) classify task tier, (b) create a foreman-compliant branch, (c) invoke the agent
-CLI, (d) write a brief.md. Review wiring can be Phase 2.1.
+**Resolution:** Keep the dispatcher as a shell scaffold in Phase 2. It handles brief parsing,
+branch creation, and hook verification, then tells the author exactly how to invoke the
+Python reviewer after work is complete. The actual review path lives in
+`scripts/foreman-review.py` and `hooks/pre-push`, not inside the dispatcher.
 
-**Opened:** 2026-04-09
+**Opened:** 2026-04-09 | **Resolved:** 2026-04-10
 
 ---
 
@@ -146,7 +150,7 @@ behavior for missing or `none-yet` `Reviewed-By`.
 
 ## #1 — What is the right model routing policy for Phase 2+?
 
-**Status:** open
+**Status:** resolved — Sonnet default, classifier deferred to Phase 2.1
 
 **Background:** The current policy (see AGENTS.md § Model Routing) is:
 - Haiku 4.5 → trivial/cheap tasks (dispatcher, summarization, classification)
@@ -170,8 +174,14 @@ expectation, whether the task changes behavior or architecture, whether it touch
 (auth/data/migrations), whether acceptance criteria are crisp, whether failure is cheap to
 detect. If confidence is low, route upward automatically.
 
-**Wanted:** Validation against 30 days of real task distribution before locking the policy.
-Design the classifier prompt once Phase 1.5 is done and real task volume gives something to
-calibrate against.
+**Resolution:** Phase 2 skips the Haiku classifier entirely. All real implementation work
+defaults to Sonnet-level routing for now, and the classifier is deferred to Phase 2.1 after
+the reviewer is stable. This keeps the system focused on the core value first: a different
+model reviewing every diff. The promotion trigger for revisiting routing automation is the
+same Phase 2.1 checkpoint where reviewer quality is evaluated.
 
-**Opened:** 2026-04-09
+**Why:** There is not enough real task volume yet to calibrate a classifier well, so adding
+Haiku routing now would create another source of misconfiguration without enough evidence to
+tune it. The cheaper layer can wait until foreman has better reviewer and routing telemetry.
+
+**Opened:** 2026-04-09 | **Resolved:** 2026-04-10

@@ -109,3 +109,7 @@ else
   echo "Not inside a git work tree. Run: git checkout -b ${BRANCH_NAME}"
   echo "WARNING: unable to verify .git/hooks/commit-msg outside a git work tree"
 fi
+
+echo ""
+echo "Next step after completing your work:"
+echo "  git diff main...HEAD | python3 scripts/foreman-review.py --author-model ${MODEL_TIER} --branch ${BRANCH_NAME} -"
