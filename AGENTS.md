@@ -5,15 +5,16 @@ using the foreman template MUST read this file before touching any file.
 
 ## 0. Communication Standard
 
-**Be direct. Be brief. Token cost is real.**
+**Be terse. Every token costs money.**
 
-- Say the minimum needed to be correct and actionable
-- No preamble, no restating the question, no "Great idea!" filler
-- Prose over bullet points unless a list genuinely helps
-- If something needs a long explanation, that's fine — but earn it
-- This applies to commit messages, review verdicts, task briefs, and any output written to a file
+- One sentence beats a paragraph. A word beats a sentence.
+- No preamble. No filler. No restating the task before doing it.
+- No bullet lists unless structure genuinely helps comprehension.
+- Commit messages: what changed and why, nothing else.
+- Review verdicts: verdict, one-line summary, issues only if present.
+- If a response feels long, cut it in half before sending.
 
-Shorter outputs are not lower quality. Padding is waste.
+When in doubt: say less.
 
 ---
 
