@@ -137,6 +137,34 @@ Phase 2 will enforce this with an automated script.
 
 ---
 
+## Known Limitation: Cloud Agents Bypass Local Hooks
+
+Phase 1 hooks run on your local machine. Any agent that operates in a remote cloud
+sandbox — cloning your repo, committing, and pushing back without touching your
+filesystem — will bypass them entirely.
+
+**Confirmed affected:** Codex Mac app (proven by two trailer-less commits landing on
+Taxes `main` in the first real-world Phase 1 audit, April 9 2026).
+
+**Likely affected:** any GUI-based cloud AI coding tool that manages its own git sandbox.
+
+**Not affected:** Codex CLI, Claude Code CLI, and any agent invoked locally.
+
+**Partial mitigation today:** GitHub branch protection rules + a GitHub Actions
+workflow that validates the trailer schema server-side. This catches non-compliant
+pushes from any source. See `OPEN_QUESTIONS.md` #2 for the Phase 1.5 vs. Phase 2
+tradeoff discussion.
+
+**Long-term:** Phase 3 Dagger Container Use gives every agent an isolated local
+worktree where hooks DO fire. Phase 4 OpenClaw orchestration adds a supervisor layer
+that enforces conventions before any agent touches the repo.
+
+**Recommendation:** For foreman-governed work, use CLI agents (Claude Code, Codex CLI)
+rather than cloud-sandbox GUIs until server-side enforcement is in place. See
+`DECISIONS.md` entry "Codex Mac App Is Not the Primary Agent Interface" for full context.
+
+---
+
 ## The Four Phases
 
 Foreman is built in phases so you fix the most painful thing first without
@@ -148,14 +176,22 @@ overbuilding before you understand your actual failure modes.
 - Commit trailer schema
 - pre-push gate (tests + lint + build)
 - commit-msg hook
+- ⚠️ Local hooks only — cloud-sandbox agents bypass them (see Known Limitation above)
+
+**Phase 1.5 — Server-side enforcement** *(optional, before Phase 2)*
+- GitHub branch protection rules on all foreman-governed repos
+- GitHub Actions workflow validating the trailer schema on every push
+- Closes the cloud-agent bypass gap without requiring Phase 2 infrastructure
 
 **Phase 2 — Cross-model reviewer script** *(coming next)*
 - A script that pipes any diff to a different model with a strict output schema
 - Returns APPROVE / REQUEST_CHANGES / BLOCKER with reasons
 - Wired into the pre-push hook as a soft or hard gate
+- Targets CLI agents (Claude Code CLI, Codex CLI) — scriptable and composable
 
 **Phase 3 — Dagger Container Use** *(after Phase 2 is stable)*
 - Each agent gets its own isolated container + git worktree
+- Local hooks fire inside the container → all agents covered
 - Deny-by-default network policy
 - Credential proxying so agents never see raw tokens
 - Safe for unattended overnight runs

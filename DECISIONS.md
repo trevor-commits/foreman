@@ -16,6 +16,52 @@ Entry format:
 
 ---
 
+## 2026-04-09 — Codex Mac App Is Not the Primary Agent Interface
+
+**Decision:** The Codex Mac app is not a viable long-term agent interface for foreman-governed
+projects. Preferred interfaces are: Codex CLI, Claude Code CLI, or any agent that can be
+invoked programmatically via CLI or OAuth. The Mac app is deprioritized until it supports
+server-enforced hook compliance or equivalent.
+
+**Why:** Phase 1 audited two Codex Mac app commits on Taxes `main` (`2f80ddf feat(web)` and
+`12b0d2d fix(web)`) and confirmed neither carried any foreman trailers (Agent, Thread, Task,
+Verified-By, Reviewed-By). Root cause: the Codex Mac app runs in OpenAI's cloud sandbox —
+it clones the repo remotely, makes commits, and pushes back directly. Local `.git/hooks/`
+never fire in that environment. This makes Phase 1 enforcement structurally impossible against
+the Mac app without server-side controls.
+
+Beyond the hook problem: the Mac app doesn't expose a programmatic interface. You can't script
+which model it uses, inject context at session start, enforce a branch naming convention before
+the agent begins, or wire it into a dispatcher that routes tasks by cost tier. It is a
+GUI-first tool and fundamentally difficult to control from outside the GUI. CLI-based agents
+(Codex CLI, Claude Code) are scriptable, composable, and can be invoked by a foreman dispatcher
+in Phase 3+.
+
+**Alternatives Considered:**
+- GitHub branch protection rules to block non-compliant pushes server-side (valid partial fix:
+  catches trailerless commits even from cloud agents; does NOT solve the scriptability problem;
+  planned for Phase 1.5).
+- GitHub Actions CI hook to validate trailer schema on every push (same: catches some
+  compliance failures but doesn't make the Mac app controllable).
+- Continue using Mac app for large context tasks only, CLI for everything governed by foreman
+  (rejected: two-tier policy creates confusion; better to standardize on one interface).
+
+**Implication for the roadmap:**
+- Phase 2 cross-model reviewer script targets CLI invocations — Codex CLI and Claude Code CLI
+  are both scriptable and can be piped into a reviewer subprocess.
+- Phase 3 Dagger Container Use gives each CLI agent an isolated worktree; Mac app cannot
+  participate in container-isolated workflows.
+- Any foreman work done via the Mac app in the interim should be treated as "best-effort" and
+  manually audited before merge.
+
+**Open question:** Is there an OAuth/API path into Codex that would give foreman-level control?
+See `OPEN_QUESTIONS.md` entry #3.
+
+**Agent:** claude-sonnet-4-6
+**Context:** Phase 1 audit, Cowork session April 9 2026
+
+---
+
 ## 2026-04-09 — Branch Ledger is the Durable Source of Truth
 
 **Decision:** `BRANCH_LEDGER.md` is the canonical record for open agent branches.
