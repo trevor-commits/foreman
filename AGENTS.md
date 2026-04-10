@@ -147,11 +147,32 @@ The agent MUST stop and surface a question if:
 
 ## 7. Memory and Context
 
-Before every session, read:
-1. `CLAUDE.md` (working memory — current state, open threads, gotchas)
-2. Relevant files in `memory/` (projects, people, decisions)
-3. `DECISIONS.md` (architectural decisions and their reasoning)
-4. `BRANCH_LEDGER.md` (what's currently open and why)
+**Read only what the task requires. Every file you read costs context — don't read files you won't use.**
+
+### Required for every session (no exceptions)
+- `CLAUDE.md` — current state, open branches, gotchas, stack
+
+### Read only for governance / audit / architectural work
+- `DECISIONS.md` — only when making or reviewing architectural decisions
+- `OPEN_QUESTIONS.md` — only when resolving or adding an open question
+- `BRANCH_LEDGER.md` — only when opening, closing, or auditing branches
+
+### Read only when explicitly relevant to the task
+- Files in `memory/` — only when the task involves a specific project or person listed there
+- `hooks/pre-push`, `hooks/commit-msg` — only when modifying or debugging hooks
+- `scripts/foreman-dispatch.sh`, `scripts/foreman-review.py` — only when modifying those scripts
+
+### Task type quick reference
+
+| Task type | Read these — nothing more |
+|-----------|--------------------------|
+| Coding / feature / bug fix | `CLAUDE.md` + files being changed |
+| Governance / audit / phase planning | `CLAUDE.md` + `AGENTS.md` + `DECISIONS.md` + `OPEN_QUESTIONS.md` + `BRANCH_LEDGER.md` |
+| Hook or script modification | `CLAUDE.md` + `AGENTS.md` + the specific file being changed |
+| Quick cleanup / docs fix | `CLAUDE.md` only |
+| New task on an unfamiliar repo | `CLAUDE.md` + `AGENTS.md` |
+
+`CLAUDE.md` is maintained specifically so it is the single file an agent needs to orient itself. If `CLAUDE.md` doesn't have enough context for a task, the right fix is to improve `CLAUDE.md` — not to add more mandatory reads.
 
 After any significant decision, append an entry to `DECISIONS.md`.
 After starting a new task, add a row to `BRANCH_LEDGER.md`.
