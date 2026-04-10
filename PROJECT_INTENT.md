@@ -1,48 +1,46 @@
 # PROJECT_INTENT
 
 ## Purpose
-TODO: verify the core purpose for foreman.
+Foreman is Trevor Gillette's lightweight convention template for AI-assisted coding across his repositories.
 
 ## Problem Statement
-TODO: verify the concrete user or operational problem this project solves.
+When multiple AI agents work across several repos, branch purpose disappears, commits lose task/model provenance, and local-only hooks are not enough to enforce consistent review and verification rules. Foreman solves that with repo-visible conventions, tracked records, and lightweight automation instead of a full orchestration platform.
 
 ## Target Users and Top Jobs
-- Primary users: TODO: verify
+- Primary users: Trevor Gillette and AI agents operating in his repos
 - Top jobs:
-  - TODO: verify
-  - TODO: verify
+  - start work on a branch with clear provenance, merge expectations, and durable handoff context
+  - make every commit traceable to the tool, task, and verification that produced it
+  - enforce minimum review and verification rules across repos without building a large control plane too early
 
 ## In-Scope Outcomes
-- TODO: verify
+- Phase 1: branch naming, commit trailers, `BRANCH_LEDGER.md`, local `commit-msg` and `pre-push` hooks, and PR metadata
+- Phase 1.5: GitHub Actions trailer enforcement on pushes and pull requests to `main`
+- durable governance records in `AGENTS.md`, `CLAUDE.md`, `DECISIONS.md`, and repo-visible branch history
+- a shell dispatcher scaffold (`scripts/foreman-dispatch.sh`) that reads a brief, resolves model defaults, proposes a compliant branch name, and checks for installed hooks
 
-## Non-Goals
-- TODO: verify
+## Explicit Non-Goals
+- full orchestration, dashboards, or supervisor infrastructure before the conventions prove their value
+- treating cloud-sandbox GUI agents as a primary governed write path
+- replacing project-local implementation docs or project-specific release logic
+- shipping the Phase 2 reviewer, Phase 3 Dagger isolation, or Phase 4 OpenClaw orchestration before they are justified
 
 ## Success Metrics and Guardrails
-- Leading metrics: TODO: verify
-- Lagging metrics: TODO: verify
-- Guardrails: TODO: verify
-
-## Primary Journeys and Navigation Model
-- TODO: verify the top 1 to 3 critical journeys and how users/systems move through them.
-
-## Content and Wording Principles
-- TODO: verify naming, terminology, and voice rules.
+- Leading metrics: open branches are explainable from repo files; commits carry the required trailers; non-compliant pushes are caught locally or server-side
+- Lagging metrics: less branch drift, clearer task provenance, and easier cross-repo handoff/audit recovery
+- Guardrails: keep the system lightweight, repo-visible, and portable; prefer files and small scripts over new infrastructure; require a different reviewer model than the author at merge time
 
 ## Technical Strategy and Stack Rationale
 - Current project type: `generic`
-- Why this stack now: TODO: verify
+- Stack: Markdown plus shell scripts so the conventions stay language-agnostic and easy to copy into other repos
+- Strategy: solve the highest-value coordination problems first with conventions and small tools, then add automation only where real usage proves it is needed
 
 ## Constraints, Assumptions, Risks, and Invalidation Triggers
-- Constraints: TODO: verify
-- Assumptions: TODO: verify
-- Risks: TODO: verify
-- Invalidation triggers: TODO: verify
-
-## Operability and Quality Bar
-- Reliability/diagnosability: TODO: verify
-- Security/privacy: TODO: verify
-- Accessibility/mobile/responsive needs: TODO: verify
+- Constraints: solo-operator scale, mixed downstream stacks, and the need to support multiple AI tools without assuming one vendor or runtime
+- Assumptions: CLI-based agents are the safe primary governed write path; lightweight repo-native records are easier to maintain than a separate control system
+- Risks: cloud agents can bypass local hooks, downstream copies of governance docs can drift, and Phase 2+ automation can be overbuilt
+- Invalidation triggers: if the lightweight model fails to control branch/review hygiene, if manual propagation becomes too error-prone, or if real usage shows orchestration is needed sooner
 
 ## Open Questions and Decision Records
-- TODO: verify open questions and link ADRs/issues when they exist.
+- Open questions: Phase 2 dispatcher evolution and long-term model routing calibration remain in `OPEN_QUESTIONS.md`
+- Key decisions: branch ledger as source of truth, commit trailers as the durable audit trail, and Phase 1.5 server-side trailer enforcement in `DECISIONS.md`

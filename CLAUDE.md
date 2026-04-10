@@ -1,7 +1,7 @@
 # Working Memory — foreman
 
 _Claude's working memory. Read at the start of every session. Update as context changes._
-_Last updated: 2026-04-09_
+_Last updated: 2026-04-10_
 
 ---
 
@@ -46,19 +46,21 @@ This repo: shell scripts, Markdown. Language-agnostic — the conventions apply 
 
 ## Handoff Summary
 
-Completed on 2026-04-09:
+Completed through 2026-04-10:
 - Phase 1.5 landed in `foreman`, `Taxes`, and `bible-ai`
 - `.github/workflows/foreman-trailer-check.yml` now enforces required trailers on pushes/PRs to `main`
 - `.agent-runs/` is now documented as optional scratch space; commit trailers are the durable audit artifact
 - `scripts/foreman-dispatch.sh` exists as the minimum shell dispatcher scaffold
+- `PROJECT_INTENT.md` is now filled with the actual Phase 1 / Phase 1.5 purpose, scope, and constraints
+- downstream governance-doc sync is intentionally manual for now; downstream copies stay repo-local until drift costs justify automation
 
 Skipped or caveated:
 - No second-model review automation yet; `Reviewed-By` remains warning-only
-- `PROJECT_INTENT.md` is still mostly `TODO: verify`
+- downstream governance-doc copies can still drift between sync passes because manual mirroring was kept by design
 
 Next session should:
 - decide whether to promote the shell dispatcher into a real CLI-invoking Phase 2 dispatcher
-- fill in `PROJECT_INTENT.md`
+- validate the trailer-check workflow from a hosted runner rather than syntax-only/local inspection
 - add the reviewer wiring / merge gate that Phase 2 still promises
 
 ## Recent Decisions
@@ -67,6 +69,8 @@ See DECISIONS.md for full history.
 
 - **2026-04-09** — Commit trailers plus tracked repo files are the durable audit trail;
   `.agent-runs/` is scratch space only.
+- **2026-04-10** — Downstream governance docs remain manually mirrored at current scale;
+  accept limited drift rather than adding sync machinery now.
 - **2026-04-09** — Phase 1.5 server-side trailer enforcement is now active in `foreman`,
   `Taxes`, and `bible-ai`.
 - **2026-04-09** — Adopted Codex's phased approach to avoid overbuilding: branch ledger

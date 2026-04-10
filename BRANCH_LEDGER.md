@@ -12,7 +12,6 @@ Update this file when you open a branch (set status `open`) and when you close i
 
 | Branch | Agent | Date | Task | Merge Condition | Thread | Status | Notes |
 |--------|-------|------|------|-----------------|--------|--------|-------|
-| _(none yet)_ | | | | | | | |
 
 ---
 
@@ -20,6 +19,7 @@ Update this file when you open a branch (set status `open`) and when you close i
 
 | Branch | Agent | Date | Task | Outcome | Closed |
 |--------|-------|------|------|---------|--------|
+| `agent/codex/2026-04-10/cleanup-pass` | codex-gpt-5 | 2026-04-10 | Fix post-run cleanup findings, fill `PROJECT_INTENT.md`, and decide the downstream governance-doc sync strategy | Merged to `main` after documenting the bible-ai governance-only push bypass, filling `PROJECT_INTENT.md`, choosing manual downstream governance-doc mirroring, and refreshing both repos' handoff files | 2026-04-10 |
 | `agent/codex/2026-04-09/phase15-governance` | codex-gpt-5 | 2026-04-09 | Land Phase 1.5 trailer enforcement, resolve audit-trail policy, add dispatcher prototype, and sync downstream repo governance updates | Merged to `main` after landing trailer-check workflows, audit-trail decision updates, dispatcher prototype, and CLAUDE handoff refreshes across all three repos | 2026-04-09 |
 
 ---

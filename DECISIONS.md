@@ -16,6 +16,27 @@ Entry format:
 
 ---
 
+## 2026-04-10 — Downstream Governance Docs Stay Manually Mirrored
+
+**Decision:** Chose Option A. Downstream repos keep their own `OPEN_QUESTIONS.md` and
+`DECISIONS.md` copies. Cross-cutting foreman governance decisions are propagated manually
+during agent sessions when they materially affect a downstream repo.
+
+**Why:** At current solo-operator scale, manual mirroring is the safer and lower-risk choice.
+It avoids adding cross-repo symlink/reference coupling or a sync script that itself would
+need maintenance, trust, and failure handling. The current downstream set is small enough
+that occasional manual propagation is cheaper than adding more machinery now.
+
+**Alternatives Considered:** Option B — canonical foreman-only docs with downstream repos
+referencing the foreman copy (rejected: creates cross-repo coupling and makes downstream
+context less self-contained). Option C — add a sync script (rejected: more moving parts than
+the current scale justifies, and another tool agents would need to remember to run).
+
+**Agent:** codex-gpt-5
+**Context:** 2026-04-10 cleanup pass
+
+---
+
 ## 2026-04-09 — Commit Trailers Are The Durable Audit Trail
 
 **Decision:** `.agent-runs/` is optional local scratch space only. The durable audit trail
