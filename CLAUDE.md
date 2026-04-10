@@ -20,7 +20,9 @@ Trevor Gillette — trevorgillette17@gmail.com
 
 ## Current Phase
 
-**Phase 1** — Branch conventions, commit trailers, and gate hooks. See AGENTS.md.
+**Phase 1.5** — Branch conventions, commit trailers, local hooks, and GitHub Actions
+trailer enforcement are active. A shell dispatcher prototype now exists; cross-model
+review automation is still pending.
 
 Phases still to build:
 - Phase 2: cross-model reviewer script (a different model reviews every diff)
@@ -42,22 +44,31 @@ This repo: shell scripts, Markdown. Language-agnostic — the conventions apply 
 | `hooks/` | Git hooks for commit enforcement and pre-push gates |
 | `.github/PULL_REQUEST_TEMPLATE.md` | PR template with agent metadata |
 
-## Open Threads
+## Handoff Summary
 
-_None yet — add entries here as agent sessions open._
+Completed on 2026-04-09:
+- Phase 1.5 landed in `foreman`, `Taxes`, and `bible-ai`
+- `.github/workflows/foreman-trailer-check.yml` now enforces required trailers on pushes/PRs to `main`
+- `.agent-runs/` is now documented as optional scratch space; commit trailers are the durable audit artifact
+- `scripts/foreman-dispatch.sh` exists as the minimum shell dispatcher scaffold
 
-Format:
-```
-- Branch: agent/claude/2026-04-09/example-task
-  Model: claude-sonnet-4-6
-  Thread: <url or session id>
-  Status: open
-```
+Skipped or caveated:
+- No second-model review automation yet; `Reviewed-By` remains warning-only
+- `PROJECT_INTENT.md` is still mostly `TODO: verify`
+
+Next session should:
+- decide whether to promote the shell dispatcher into a real CLI-invoking Phase 2 dispatcher
+- fill in `PROJECT_INTENT.md`
+- add the reviewer wiring / merge gate that Phase 2 still promises
 
 ## Recent Decisions
 
 See DECISIONS.md for full history.
 
+- **2026-04-09** — Commit trailers plus tracked repo files are the durable audit trail;
+  `.agent-runs/` is scratch space only.
+- **2026-04-09** — Phase 1.5 server-side trailer enforcement is now active in `foreman`,
+  `Taxes`, and `bible-ai`.
 - **2026-04-09** — Adopted Codex's phased approach to avoid overbuilding: branch ledger
   and hooks first, cross-model reviewer second, Container Use third, OpenClaw last.
 - **2026-04-09** — Branch ledger (BRANCH_LEDGER.md) is the durable source of truth for
@@ -73,5 +84,8 @@ See DECISIONS.md for full history.
 - The commit-msg hook skips merge commits, fixup commits, squash! commits, and WIP/wip prefixes.
 - The commit-msg hook hard-enforces `Agent`, `Thread`, `Task`, `Verified-By`. `Reviewed-By` is warning-only in Phase 1.
 - The pre-push gate is heuristic autodetection (pytest/ruff/mypy, npm, or make). It may run nothing if no test runner is found. It is not a guaranteed full-stack gate.
-- Both hooks are **local only** — cloud-sandbox agents bypass them. Server-side enforcement (Phase 1.5) is the fix.
-- `.agent-runs/` is gitignored by default, meaning the audit trail is local-only and does not survive a re-clone. See OPEN_QUESTIONS.md #5.
+- Local hooks still matter, but `.github/workflows/foreman-trailer-check.yml` now covers
+  the server-side enforcement gap for pushes and pull requests to `main`.
+- `.agent-runs/` is optional local scratch space only. Durable audit context lives in
+  commit trailers plus tracked repo files such as `BRANCH_LEDGER.md`, `DECISIONS.md`,
+  and `todo.md`.

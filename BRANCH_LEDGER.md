@@ -12,7 +12,7 @@ Update this file when you open a branch (set status `open`) and when you close i
 
 | Branch | Agent | Date | Task | Merge Condition | Thread | Status | Notes |
 |--------|-------|------|------|-----------------|--------|--------|-------|
-| `agent/codex/2026-04-09/phase15-governance` | codex-gpt-5 | 2026-04-09 | Land Phase 1.5 trailer enforcement, resolve audit-trail policy, add dispatcher prototype, and sync downstream repo governance updates | Workflows, governance docs, dispatcher script, CLAUDE handoff updates, commit, push, and downstream landings complete | codex-desktop | open | Multi-repo rollout covering `foreman`, `Taxes`, and `bible-ai` |
+| _(none yet)_ | | | | | | | |
 
 ---
 
@@ -20,7 +20,7 @@ Update this file when you open a branch (set status `open`) and when you close i
 
 | Branch | Agent | Date | Task | Outcome | Closed |
 |--------|-------|------|------|---------|--------|
-| _(none yet)_ | | | | | |
+| `agent/codex/2026-04-09/phase15-governance` | codex-gpt-5 | 2026-04-09 | Land Phase 1.5 trailer enforcement, resolve audit-trail policy, add dispatcher prototype, and sync downstream repo governance updates | Merged to `main` after landing trailer-check workflows, audit-trail decision updates, dispatcher prototype, and CLAUDE handoff refreshes across all three repos | 2026-04-09 |
 
 ---
 
