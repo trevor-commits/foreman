@@ -143,7 +143,22 @@ Notes:
 
 ---
 
-## 6. Autonomy Rules
+## 6. Branch Consolidation and Cleanup
+
+When asked to merge, consolidate, close, or clean up branches, always use the repo-safe path:
+
+1. Create a cleanup branch (`agent/<tool>/<date>/branch-cleanup` or similar)
+2. Do all the work on that branch — land unmerged changes, update BRANCH_LEDGER.md, mark stale branches `abandoned`
+3. Push the cleanup branch
+4. Merge to main via PR or local merge
+
+**Never use `--no-verify` to push consolidation work directly to main.** The hook blocking direct pushes to main is working correctly — it is not an obstacle to route around.
+
+If branches are stale and have no unmerged work, mark them `abandoned` in BRANCH_LEDGER.md on the cleanup branch. You do not need to force-merge branches that contribute no net changes.
+
+---
+
+## 7. Autonomy Rules
 
 The agent MAY:
 - Create and edit files in its branch/worktree
