@@ -9,6 +9,7 @@ Capture the current goal plus the concrete dependency-ordered steps that are sti
 
 ## Completed
 Preserve a durable completion trail for verified work instead of deleting it from active planning.
+- Completed 2026-04-09: Landed the Phase 1.5 governance rollout across `foreman`, `Taxes`, and `bible-ai`. Merged the stale downstream install branches to `main`, added `.github/workflows/foreman-trailer-check.yml` in all three repos, clarified that `.agent-runs/` is scratch space while commit trailers are the durable audit artifact, added `scripts/foreman-dispatch.sh`, refreshed `CLAUDE.md`, and pushed every reachable repo update | priority: P1 | owner: Trevor Gillette | target date: 2026-04-09
 - No completed entries recorded yet.
 
 ## Suggested Recommendation Log
@@ -30,6 +31,12 @@ Each active branch entry should include:
 - `retain reason` when not deleting
 
 ## Branch History
+- branch: `agent/codex/2026-04-09/phase15-governance`
+  source chat: 2026-04-09 "Work through Task 0-4 across foreman, Taxes, and bible-ai"
+  last refreshed by chat: same chat
+  purpose: land the Phase 1.5 trailer-check rollout, resolve the audit-trail decision, add the dispatcher prototype, and refresh downstream governance records
+  outcome: merged to `main` on 2026-04-09 after all three repos were updated, committed, and pushed
+  cleanup status: branch merged; local and remote cleanup still pending
 - No closed branch entries recorded yet.
 
 ## Audit Record Convention

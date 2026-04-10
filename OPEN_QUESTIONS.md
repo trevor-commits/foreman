@@ -18,7 +18,7 @@ Entry format:
 
 ## #5 — Audit trail is gitignored: how do we make run evidence durable?
 
-**Status:** open
+**Status:** resolved — commit trailers are the durable artifact
 
 **Background:** AGENTS.md (§ 8 Run Logging) says each agent run gets a folder under
 `.agent-runs/<YYYY-MM-DD>-<slug>/` containing `brief.md`, `review.md`, and `outcome.md`.
@@ -42,17 +42,24 @@ This is a direct contradiction at the core of the system's auditability promise.
 4. **Separate audit store:** Write run outcomes to a separate repo or external store
    (e.g., a private `foreman-runs` repo, an S3 bucket, a simple append-only JSON log).
 
-**Wanted:** A concrete recommendation on which option best fits solo-operator scale with
-minimal friction. Option 3 may be the right answer — but if so, AGENTS.md § 8 needs to be
-rewritten so it doesn't promise an audit trail that doesn't exist.
+**Resolution:** Option 3 is the right fit at solo-operator scale. `.agent-runs/` remains
+useful as local scratch space during active debugging, but it is not the system of record.
+The durable audit trail is the commit itself, via the foreman trailer schema
+(`Agent`, `Thread`, `Task`, `Verified-By`, `Reviewed-By`), plus tracked repo-visible files
+such as `BRANCH_LEDGER.md`, `DECISIONS.md`, and `todo.md` audit/history sections when used.
 
-**Opened:** 2026-04-09
+**Why:** This keeps the durable artifact in the place that already survives re-clones,
+travel across tools, and later audits: git history. It avoids adding a second audit store,
+avoids forcing agents to commit noisy scratch files, and still leaves room for local debug
+notes when a task benefits from them.
+
+**Opened:** 2026-04-09 | **Resolved:** 2026-04-09
 
 ---
 
 ## #4 — What does the Phase 2 dispatcher script actually look like?
 
-**Status:** open
+**Status:** investigating — shell prototype exists
 
 **Background:** The roadmap describes Phase 2 as "a script that pipes any diff to a different
 model with a strict output schema, returns APPROVE / REQUEST_CHANGES / BLOCKER with reasons,
@@ -74,6 +81,13 @@ roadmap prose."
    JSON from the classifier, easier to integrate with the Anthropic SDK for Phase 2.
 3. **Defer entirely:** Build Phase 1.5 (server-side enforcement) first, then design the
    dispatcher based on what Phase 1.5 surfaces as the next pain point.
+
+**Current status:** A minimum viable Option 1 scaffold now exists at
+`scripts/foreman-dispatch.sh`. The script reads a `brief.md`, extracts `Model:` and
+`Reasoning Level:` with defaults of `sonnet` / `medium`, prints the resolved model tier and
+foreman-compliant branch name, creates the branch when it can, and warns if the local
+`commit-msg` hook is missing. It does not yet classify tasks via an API call or invoke an
+agent CLI/reviewer.
 
 **Wanted:** A prototype dispatcher in Option 1 or 2 form that handles the minimum viable
 case: (a) classify task tier, (b) create a foreman-compliant branch, (c) invoke the agent
@@ -110,7 +124,7 @@ design question.
 
 ## #2 — Should server-side trailer enforcement (GitHub branch protection) be Phase 1.5 or Phase 2?
 
-**Status:** resolved — Phase 1.5, implement now
+**Status:** resolved — implemented in Phase 1.5
 
 **Resolution (from Codex's audit, April 9 2026):**
 Codex's verdict: "This should be Phase 1.5 now, not Phase 2 later. The reason is simple:
@@ -120,8 +134,11 @@ trailers plus branch protection is small, cheap, and immediately useful. Waiting
 2 couples a solved problem to a larger unsolved design."
 
 Agreed. Phase 1.5 is now an explicit step in the roadmap (see README.md and the Phased
-Rollout decision in DECISIONS.md). Server-side enforcement remains unimplemented in this
-repo as of the resolution date — it is the next concrete task.
+Rollout decision in DECISIONS.md). As of 2026-04-09, the implementation is now present in
+`foreman`, `Taxes`, and `bible-ai` via `.github/workflows/foreman-trailer-check.yml`.
+The workflow checks every non-merge commit on pushes and pull requests to `main`, enforces
+`Agent`, `Thread`, `Task`, and `Verified-By`, and preserves the local hook's warning-only
+behavior for missing or `none-yet` `Reviewed-By`.
 
 **Opened:** 2026-04-09 | **Resolved:** 2026-04-09
 

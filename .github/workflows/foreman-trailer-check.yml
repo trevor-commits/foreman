@@ -1,0 +1,112 @@
+name: Foreman Trailer Check
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  trailer-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify required foreman trailers
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          PUSH_HEAD_SHA: ${{ github.sha }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          is_all_zeros() {
+            local value="${1:-}"
+            [[ -n "$value" && "$value" =~ ^0+$ ]]
+          }
+
+          collect_commits() {
+            if [[ "$EVENT_NAME" == "pull_request" ]]; then
+              git rev-list --reverse "${PR_BASE_SHA}..${PR_HEAD_SHA}"
+              return
+            fi
+
+            if [[ -n "${BEFORE_SHA:-}" ]] && ! is_all_zeros "$BEFORE_SHA"; then
+              git rev-list --reverse "${BEFORE_SHA}..${PUSH_HEAD_SHA}"
+              return
+            fi
+
+            git rev-list --reverse "${PUSH_HEAD_SHA}"
+          }
+
+          mapfile -t COMMITS < <(collect_commits)
+
+          if [[ "${#COMMITS[@]}" -eq 0 ]]; then
+            echo "No commits found for this event. Nothing to validate."
+            exit 0
+          fi
+
+          failures=0
+          warnings=0
+
+          for sha in "${COMMITS[@]}"; do
+            subject="$(git show -s --format=%s "$sha")"
+            body="$(git show -s --format=%B "$sha")"
+            parents="$(git show -s --format=%P "$sha")"
+            parent_count=0
+
+            if [[ -n "$parents" ]]; then
+              parent_count=$(wc -w <<<"$parents" | tr -d '[:space:]')
+            fi
+
+            if [[ "$parent_count" -gt 1 ]]; then
+              echo "Skipping merge commit ${sha}: ${subject}"
+              continue
+            fi
+
+            if [[ "$subject" =~ ^(Merge\ |fixup!\ |squash!\ |WIP\ |wip\ ) ]]; then
+              echo "Skipping exempt commit ${sha}: ${subject}"
+              continue
+            fi
+
+            missing=()
+            for trailer in Agent Thread Task Verified-By; do
+              if ! grep -qiE "^${trailer}:[[:space:]]*.+" <<<"$body"; then
+                missing+=("$trailer")
+              fi
+            done
+
+            if [[ "${#missing[@]}" -gt 0 ]]; then
+              failures=1
+              missing_csv="$(printf '%s, ' "${missing[@]}")"
+              missing_csv="${missing_csv%, }"
+              echo "::error::Commit ${sha} is missing required trailers: ${missing_csv}"
+            else
+              echo "Commit ${sha} includes all required trailers."
+            fi
+
+            reviewed_by="$(grep -iE '^Reviewed-By:' <<<"$body" | head -1 || true)"
+            if [[ -z "$reviewed_by" || "$reviewed_by" =~ [Nn][Oo][Nn][Ee]-[Yy][Ee][Tt] ]]; then
+              warnings=$((warnings + 1))
+              echo "::warning::Commit ${sha} has no effective Reviewed-By trailer. Warning only in Phase 1."
+            fi
+          done
+
+          if [[ "$failures" -ne 0 ]]; then
+            echo "Required foreman trailers are missing on one or more commits."
+            exit 1
+          fi
+
+          if [[ "$warnings" -gt 0 ]]; then
+            echo "${warnings} commit(s) passed with Reviewed-By warnings only."
+          else
+            echo "All checked commits passed without Reviewed-By warnings."
+          fi
