@@ -113,6 +113,25 @@ resolve_review_base_ref() {
   return 1
 }
 
+model_family() {
+  local model_value
+  model_value="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
+  case "$model_value" in
+    *claude*)
+      printf '%s\n' "claude"
+      ;;
+    *codex*)
+      printf '%s\n' "codex"
+      ;;
+    gpt*|*gpt*|o1*|o3*|o4*|*openai*)
+      printf '%s\n' "gpt"
+      ;;
+    *)
+      printf '%s\n' "unknown"
+      ;;
+  esac
+}
+
 # ── Python gates ──────────────────────────────────────────────────────────────
 if [ -f "pyproject.toml" ] || [ -f "setup.py" ] || [ -f "setup.cfg" ] || [ -f "requirements.txt" ]; then
   # pytest
@@ -195,12 +214,50 @@ if [ "$REAL_GATES" -eq 0 ]; then
   echo ""
 fi
 
-# ── Phase 2 reviewer (soft gate by default) ───────────────────────────────────
+# ── Commit trailer validation ────────────────────────────────────────────────
 REVIEWER_SCRIPT="$REPO_ROOT/scripts/foreman-review.py"
 REVIEW_JSON_PATH="$REPO_ROOT/.agent-runs/last-review.json"
 REVIEW_BASE_REF="$(resolve_review_base_ref || true)"
 REVIEW_DIFF=""
 
+if [[ -z "$REVIEW_BASE_REF" ]]; then
+  echo "Trailer validation: skipped (unable to resolve diff base; tried main and origin/main)"
+else
+  REQUIRED_TRAILERS=("Agent" "Thread" "Task" "Verified-By")
+  TRAILER_ERRORS=()
+
+  while IFS= read -r commit_hash; do
+    commit_msg="$(git log -1 --format=%B "$commit_hash")"
+    commit_subject="$(git log -1 --format=%s "$commit_hash")"
+
+    if [[ "$commit_subject" =~ ^Merge\ |^fixup\!|^squash\!|^WIP|^wip ]]; then
+      continue
+    fi
+
+    for trailer in "${REQUIRED_TRAILERS[@]}"; do
+      if ! printf '%s\n' "$commit_msg" | grep -qiE "^${trailer}:[[:space:]].+"; then
+        TRAILER_ERRORS+=("  ❌  commit ${commit_hash:0:7}: missing '$trailer:' trailer")
+      fi
+    done
+  done < <(git log "${REVIEW_BASE_REF}"..HEAD --format=%H)
+
+  if [ ${#TRAILER_ERRORS[@]} -gt 0 ]; then
+    echo ""
+    echo "⚠️   foreman: trailer validation found issues:"
+    for err in "${TRAILER_ERRORS[@]}"; do
+      echo "$err"
+    done
+    echo ""
+    echo "    These commits will fail the GitHub Actions trailer-check workflow."
+    echo "    Fix with: git rebase -i ${REVIEW_BASE_REF} (then amend each commit)"
+    echo "    Or bypass server-side check (not recommended): push to a non-main branch"
+    echo ""
+  else
+    echo "    ✅  Trailer validation: all commits carry required trailers"
+  fi
+fi
+
+# ── Phase 2 reviewer (soft gate by default) ───────────────────────────────────
 if [[ -z "$REVIEW_BASE_REF" ]]; then
   echo "Reviewer: skipped (unable to resolve diff base; tried main and origin/main)"
 elif ! command -v python3 >/dev/null 2>&1; then
@@ -216,14 +273,37 @@ else
 fi
 
 if [[ -n "${REVIEW_DIFF:-}" ]]; then
-  COMMIT_BODY="$(git log -1 --format=%B)"
-  AGENT_MODEL="$(printf '%s\n' "$COMMIT_BODY" | sed -n 's/^Agent:[[:space:]]*//p' | head -1)"
-  AGENT_MODEL="${AGENT_MODEL:-unknown}"
+  BRANCH_COMMIT_COUNT="$(git rev-list --count "${REVIEW_BASE_REF}"..HEAD 2>/dev/null || echo 0)"
+  mapfile -t AGENT_MODELS < <(
+    git log "${REVIEW_BASE_REF}"..HEAD --format=%B | \
+      sed -n 's/^Agent:[[:space:]]*//p' | sort | uniq -c | sort -rn | \
+      awk '{print $2}' | head -5
+  )
+
+  PRIMARY_AGENT_MODEL="unknown"
+  if [[ "${#AGENT_MODELS[@]}" -gt 0 ]]; then
+    PRIMARY_AGENT_MODEL="${AGENT_MODELS[0]}"
+    FIRST_AGENT_FAMILY="$(model_family "${AGENT_MODELS[0]}")"
+    if [[ "$FIRST_AGENT_FAMILY" != "unknown" ]]; then
+      ALL_SAME_FAMILY=true
+      for agent_model in "${AGENT_MODELS[@]}"; do
+        if [[ "$(model_family "$agent_model")" != "$FIRST_AGENT_FAMILY" ]]; then
+          ALL_SAME_FAMILY=false
+          break
+        fi
+      done
+      if [[ "$ALL_SAME_FAMILY" == "true" ]]; then
+        PRIMARY_AGENT_MODEL="$FIRST_AGENT_FAMILY"
+      fi
+    fi
+  fi
+
+  echo "ℹ️  foreman: detected author model '$PRIMARY_AGENT_MODEL' from ${BRANCH_COMMIT_COUNT} commits on branch"
 
   set +e
   REVIEWER_OUTPUT="$(
     printf '%s' "$REVIEW_DIFF" | \
-      python3 "$REVIEWER_SCRIPT" --author-model "$AGENT_MODEL" --branch "$CURRENT_BRANCH" - 2>&1
+      python3 "$REVIEWER_SCRIPT" --author-model "$PRIMARY_AGENT_MODEL" --branch "$CURRENT_BRANCH" - 2>&1
   )"
   REVIEWER_EXIT=$?
   set -e

@@ -4,6 +4,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TEST_REPO="/tmp/foreman-hook-test-$$"
+TEST_REMOTE="/tmp/foreman-hook-remote-$$.git"
 FAILURES=0
 
 pass() {
@@ -17,14 +18,17 @@ fail() {
 
 cleanup() {
   rm -rf "$TEST_REPO"
+  rm -rf "$TEST_REMOTE"
 }
 
 trap cleanup EXIT
 
 git -c init.defaultBranch=agent/codex/2026-04-11/hook-smoke init "$TEST_REPO" >/dev/null
+git init --bare "$TEST_REMOTE" >/dev/null
 git -C "$TEST_REPO" config user.name "Foreman Hook Test"
 git -C "$TEST_REPO" config user.email "foreman-hook-test@example.com"
 git -C "$TEST_REPO" config core.hooksPath .git/hooks
+git -C "$TEST_REPO" remote add origin "$TEST_REMOTE"
 
 cp "$ROOT_DIR/hooks/commit-msg" "$TEST_REPO/.git/hooks/commit-msg"
 cp "$ROOT_DIR/hooks/pre-push" "$TEST_REPO/.git/hooks/pre-push"
@@ -39,6 +43,20 @@ if git -C "$TEST_REPO" commit --allow-empty -m "$VALID_MESSAGE" >/tmp/foreman-ho
 else
   cat /tmp/foreman-hook-init.log
   fail "initial commit with valid trailers is accepted"
+fi
+
+if git -C "$TEST_REPO" branch -M main && git -C "$TEST_REPO" push --no-verify -u origin main >/tmp/foreman-hook-main-push.log 2>&1; then
+  pass "bootstrap main push succeeds without verify"
+else
+  cat /tmp/foreman-hook-main-push.log
+  fail "bootstrap main push succeeds without verify"
+fi
+
+if git -C "$TEST_REPO" checkout -b agent/codex/2026-04-11/trailer-warning >/tmp/foreman-hook-branch.log 2>&1; then
+  pass "test branch for pre-push trailer scan is created"
+else
+  cat /tmp/foreman-hook-branch.log
+  fail "test branch for pre-push trailer scan is created"
 fi
 
 if (
@@ -56,6 +74,38 @@ if git -C "$TEST_REPO" commit --allow-empty -m "$VALID_COMMIT_MESSAGE" >/tmp/for
 else
   cat /tmp/foreman-hook-valid.log
   fail "commit with all required trailers is accepted"
+fi
+
+SECOND_VALID_COMMIT=$'test: second valid trailer commit\n\nAgent: codex-gpt-5\nThread: codex-desktop-2026-04-11\nTask: Second valid hook smoke commit\nVerified-By: manual\nReviewed-By: none-yet'
+INVALID_NO_VERIFY_COMMIT=$'test: invalid trailer commit bypass\n\nThread: codex-desktop-2026-04-11\nTask: Bypassed invalid hook smoke commit\nVerified-By: manual\nReviewed-By: none-yet'
+
+if git -C "$TEST_REPO" commit --allow-empty -m "$SECOND_VALID_COMMIT" >/tmp/foreman-hook-valid-second.log 2>&1; then
+  pass "second valid commit for pre-push scan is accepted"
+else
+  cat /tmp/foreman-hook-valid-second.log
+  fail "second valid commit for pre-push scan is accepted"
+fi
+
+if git -C "$TEST_REPO" commit --allow-empty --no-verify -m "$INVALID_NO_VERIFY_COMMIT" >/tmp/foreman-hook-invalid-no-verify.log 2>&1; then
+  pass "invalid commit can be created with --no-verify for pre-push scan"
+else
+  cat /tmp/foreman-hook-invalid-no-verify.log
+  fail "invalid commit can be created with --no-verify for pre-push scan"
+fi
+
+if (
+  cd "$TEST_REPO"
+  git push origin agent/codex/2026-04-11/trailer-warning >/tmp/foreman-hook-pre-push.log 2>&1
+); then
+  if grep -Fq "missing 'Agent:' trailer" /tmp/foreman-hook-pre-push.log; then
+    pass "pre-push trailer validation warns when a branch commit is missing Agent"
+  else
+    cat /tmp/foreman-hook-pre-push.log
+    fail "pre-push trailer validation warns when a branch commit is missing Agent"
+  fi
+else
+  cat /tmp/foreman-hook-pre-push.log
+  fail "pre-push trailer validation push warning run succeeds"
 fi
 
 if [[ "$FAILURES" -ne 0 ]]; then
