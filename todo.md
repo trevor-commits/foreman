@@ -4,6 +4,7 @@
 Capture the current goal plus the concrete dependency-ordered steps that are still open.
 - [Governance] `Taxes` and `bible-ai` currently drift on `scripts/foreman-review.py`, `scripts/foreman-dispatch.sh`, `scripts/requirements.txt`, and `.github/workflows/foreman-trailer-check.yml`; review and sync those repos before the next governance rollout.
 - [MCP] Validate `scripts/foreman-mcp-server.py` from a real Claude Code or Claude desktop MCP client session and confirm stdio transport plus tool registration work end to end.
+- [CI] Run the fixed `test-foreman-tooling.yml` on a real GitHub-hosted runner and confirm both jobs pass outside local YAML parsing and local shell checks.
 - [Phase 2.1] Continue the reviewer `BLOCKER` burn-in and decide whether the default should flip to a hard gate after 2026-04-24.
 - [Phase 2.1] Run `python3 scripts/foreman-calibration.py --days 14` on 2026-04-24 to evaluate `BLOCKER` accuracy before promoting `FOREMAN_HARD_GATE=1`.
 - [Phase 2.1] `test-foreman-tooling.yml` now gives hosted CI coverage for the foreman test suite on every push and PR; the remaining hosted validation gap is the `foreman-trailer-check.yml` pass/fail PR pair.
@@ -16,6 +17,7 @@ Capture the current goal plus the concrete dependency-ordered steps that are sti
 
 ## Completed
 Preserve a durable completion trail for verified work instead of deleting it from active planning.
+- Completed 2026-04-11: Audited all 10 Phase 2.1+ deliverables, fixed the invalid `test-foreman-tooling.yml` YAML, and moved the real FastMCP server implementation into `scripts/foreman-mcp-server.py` while keeping `scripts/foreman_mcp_server.py` importable for smoke checks | priority: P1 | owner: Trevor Gillette | target date: 2026-04-11
 - Completed 2026-04-11: Added `scripts/foreman-pr-prep.sh`, which reads the current branch governance state and prints a PR description pre-filled from commit trailers, last-review data, the task brief, and `BRANCH_LEDGER.md` | priority: P1 | owner: Trevor Gillette | target date: 2026-04-11
 - Completed 2026-04-11: Installed `anthropic` and `openai` into the local Python 3.14 environment and completed live classifier, Claude-fallback reviewer, Anthropic Sonnet reviewer, and OpenAI reviewer validation against trivial README diffs | priority: P1 | owner: Trevor Gillette | target date: 2026-04-11
 - Completed 2026-04-11: Added `scripts/test-hooks.sh`, a temp-repo smoke harness that validates the local `commit-msg` hook rejects missing trailers and accepts a fully tagged commit | priority: P1 | owner: Trevor Gillette | target date: 2026-04-11
@@ -124,6 +126,10 @@ Each active branch entry should include:
 - When a verification run closes or updates an audit finding, cross-reference the matching audit record entry and the chat or commit that performed the work.
 
 ## Test Evidence Log
+- date: 2026-04-11
+  command(s): `python3 scripts/test-review.py`; `bash scripts/test-hooks.sh`; `bash -n hooks/pre-push`; `bash -n hooks/commit-msg`; `bash -n hooks/install.sh`; `bash -n scripts/foreman-dispatch.sh`; `bash -n scripts/foreman-close.sh`; `bash -n scripts/foreman-status.sh`; `bash -n scripts/foreman-merge-check.sh`; `bash -n scripts/foreman-drift-check.sh`; `bash -n scripts/foreman-pr-prep.sh`; `bash -n scripts/test-review.sh`; `bash -n scripts/test-hooks.sh`; `python3 -m py_compile scripts/foreman-review.py`; `python3 -m py_compile scripts/foreman-classify.py`; `python3 -m py_compile scripts/foreman-mcp-shim.py`; `python3 -m py_compile scripts/foreman-mcp-server.py`; `python3 -m py_compile scripts/foreman_mcp_server.py`; `python3 -m py_compile scripts/foreman-calibration.py`; `python3 -c "import yaml; yaml.safe_load(open('.github/workflows/test-foreman-tooling.yml')); print('CI workflow: valid')"`
+  result: pass — the full Phase 2.1+ verification suite passed after the audit/fix pass; the tooling workflow now parses as valid YAML, the FastMCP server compiles from both the executable script and the importable module path, and all shell entrypoints remain syntax-valid
+  log/PR reference: local verification run in `main`
 - date: 2026-04-11
   command(s): `bash -n scripts/foreman-pr-prep.sh`
   result: pass — the new PR-prep helper script is syntax-valid and ready to generate pre-filled GitHub PR descriptions from current branch governance state

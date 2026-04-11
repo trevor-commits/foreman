@@ -29,6 +29,8 @@ jobs:
           bash -n scripts/foreman-close.sh
           bash -n scripts/foreman-status.sh
           bash -n scripts/foreman-merge-check.sh
+          bash -n scripts/foreman-drift-check.sh
+          bash -n scripts/foreman-pr-prep.sh
 
       - name: Compile check — Python scripts
         run: |
@@ -52,7 +54,12 @@ jobs:
           python3 -c "import sys,json; d=json.load(sys.stdin); assert d.get('verdict')=='APPROVE'"
 
       - name: MCP server smoke check
-        run: python3 -c "from scripts.foreman_mcp_server import mcp; print(f'tools: {list(mcp._tools.keys())}')"
+        run: |
+          python3 <<'PY'
+          from scripts.foreman_mcp_server import mcp
+
+          print(f"tools: {list(mcp._tools.keys())}")
+          PY
 
   test-trailer-check:
     runs-on: ubuntu-latest
