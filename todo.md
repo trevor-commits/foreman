@@ -2,7 +2,7 @@
 
 ## Active Next Steps
 Capture the current goal plus the concrete dependency-ordered steps that are still open.
-- [Governance] `Taxes` and `bible-ai` still drift on `scripts/foreman-review.py` and `docs/mcp-tools.md`; `scripts/foreman-mcp-server.py` is now synced into both repos, but the remaining governance drift still needs a deliberate sync pass before the next rollout.
+- [Governance] Tighten `scripts/foreman-drift-check.sh` repo discovery so non-project `CLAUDE.md` locations such as `~/.claude`, `~/Desktop`, and editor extensions are excluded by default.
 - [MCP] Validate `scripts/foreman-mcp-server.py` from a real Claude Code or Claude desktop MCP client session and confirm stdio transport plus tool registration work end to end.
 - [CI] Run the fixed `test-foreman-tooling.yml` on a real GitHub-hosted runner and confirm both jobs pass outside local YAML parsing and local shell checks.
 - [Phase 2.1] Continue the reviewer `BLOCKER` burn-in and decide whether the default should flip to a hard gate after 2026-04-24.
@@ -126,6 +126,18 @@ Each active branch entry should include:
 - When a verification run closes or updates an audit finding, cross-reference the matching audit record entry and the chat or commit that performed the work.
 
 ## Test Evidence Log
+- date: 2026-04-11
+  command(s): `bash scripts/foreman-drift-check.sh --repos '/Users/gillettes/Coding Projects/Taxes /Users/gillettes/Coding Projects/bible-ai'`; `python3 scripts/test-review.py`; `bash scripts/test-hooks.sh`; `bash -n hooks/pre-push`; `python3 -m py_compile scripts/foreman-mcp-server.py`; `python3 -m py_compile scripts/foreman-calibration.py`
+  result: pass — downstream recheck reports 14 files in sync with 0 missing and 0 drifted across `Taxes` and `bible-ai`, and the full local verification block exits 0 after the MCP skip-guard change
+  log/PR reference: local verification run in `main`
+- date: 2026-04-11
+  command(s): `pip3 install mcp --break-system-packages`; `python3 -c "import importlib.metadata; print(importlib.metadata.version('mcp'))"`; `python3 scripts/test-review.py`
+  result: pass — `mcp` was already installed, `importlib.metadata` confirms version `1.27.0`, and the guarded MCP smoke test in `scripts/test-review.py` still passes after adding the skip-on-missing-package safety net
+  log/PR reference: local verification run in `main`
+- date: 2026-04-11
+  command(s): `bash scripts/foreman-drift-check.sh --repos '/Users/gillettes/Coding Projects/Taxes /Users/gillettes/Coding Projects/bible-ai'`; `diff -u .github/workflows/foreman-trailer-check.yml '/Users/gillettes/Coding Projects/Taxes/.github/workflows/foreman-trailer-check.yml'`; `diff -u .github/workflows/foreman-trailer-check.yml '/Users/gillettes/Coding Projects/bible-ai/.github/workflows/foreman-trailer-check.yml'`; `bash scripts/foreman-drift-check.sh --fix --repos '/Users/gillettes/Coding Projects/Taxes /Users/gillettes/Coding Projects/bible-ai'`
+  result: pass — reviewed the downstream trailer-workflow diffs, then synced 12 drifted files across `Taxes` and `bible-ai`: `scripts/foreman-review.py`, `scripts/foreman-dispatch.sh`, `scripts/foreman-mcp-shim.py`, `scripts/requirements.txt`, `docs/mcp-tools.md`, and `.github/workflows/foreman-trailer-check.yml` in each repo
+  log/PR reference: local downstream sync run from `foreman/main`
 - date: 2026-04-11
   command(s): `ls scripts/foreman*mcp*`; `pip3 install mcp --break-system-packages 2>&1 | tail -5`; `python3 -c "import mcp; print(mcp.__version__)"`; `python3 -c "import importlib.metadata; print(importlib.metadata.version('mcp'))"`; `python3 -m py_compile scripts/foreman-mcp-server.py`; `python3 -c "import yaml; yaml.safe_load(open('.github/workflows/test-foreman-tooling.yml')); print('CI workflow: valid')"`; `python3 scripts/test-review.py`; `bash scripts/test-hooks.sh`; `bash -n hooks/pre-push`
   result: pass with one package-version caveat — the duplicate `scripts/foreman_mcp_server.py` wrapper was removed, only the hyphenated MCP server remains, `pip3` confirmed `mcp` is installed and `importlib.metadata` reports version `1.27.0`, the direct `mcp.__version__` probe still raises `AttributeError` because that package does not expose `__version__`, the MCP server compiles, the reviewer and hook smoke suites pass, and the tooling workflow YAML still validates
