@@ -40,8 +40,8 @@ and the remaining work is live validation plus deciding which soft gates should 
 
 Phase 2.1 work still to finish:
 - default hard-gate promotion decision after the burn-in window
-- live classifier validation
-- live OpenAI reviewer-path validation
+- hosted GitHub Actions trailer-check validation from real PRs
+- commit-time `Reviewed-By` promotion decision
 
 Later phases:
 - Phase 3: Dagger Container Use (isolation for parallel agents), unless the OpenHands evaluation replaces it
@@ -78,20 +78,17 @@ Completed through 2026-04-11 and present on disk on `main`:
 - `FOREMAN_HARD_GATE=1` now promotes reviewer `BLOCKER` verdicts to a hard gate without editing the hook
 - `FOREMAN_STRICT_BRANCH=1` now promotes non-compliant branch-name warnings to a hard gate without editing the hook
 - `docs/mcp-tools.md` and `scripts/foreman-mcp-shim.py` now define a proof-of-concept MCP boundary for the existing governance operations
+- local Python 3.14 now has `anthropic` and `openai` installed, and the live classifier, Claude-fallback reviewer path, Anthropic Sonnet reviewer path, and OpenAI reviewer path have all been exercised successfully
 
 Skipped or caveated:
 - `Reviewed-By` remains warning-only at commit time even though the reviewer now returns a concrete `reviewer_model`
 - downstream governance-doc copies can still drift between sync passes because manual mirroring was kept by design
 - hard-gating reviewer `BLOCKER`s is deferred to Phase 2.1 pending two weeks of use with no false `BLOCKER`s
-- the OpenAI reviewer path for Claude-authored diffs still needs explicit live validation once `OPENAI_API_KEY` is available
-- the classifier still needs live validation with a real `ANTHROPIC_API_KEY`; current fallback behavior defaults to `standard` when the key or package is unavailable
-- the default system `python3` in this environment still lacks `anthropic` and `openai`, so the local reviewer path currently emits a warning and skips live review until those packages are installed into a usable interpreter or venv
+- hosted GitHub Actions trailer-check validation is still pending from a real pass/fail PR pair
 
 Planned for next session:
 - validate whether reviewer `BLOCKER`s are accurate enough to promote to a hard gate after two weeks of use
-- validate the live Haiku classifier path against real task briefs and confirm the escalation threshold is conservative enough
-- validate the OpenAI reviewer path and the Claude-fallback path with live credentials
-- validate the trailer-check workflow from a hosted runner rather than syntax-only/local inspection
+- push a correctly tagged test PR and a missing-trailer test PR to confirm `foreman-trailer-check.yml` passes/fails on GitHub's hosted runner
 - decide whether commit-time `Reviewed-By` should stay warning-only or follow the Phase 2.1 hard-gate path later
 
 ## Recent Decisions

@@ -3,16 +3,15 @@
 ## Active Next Steps
 Capture the current goal plus the concrete dependency-ordered steps that are still open.
 - [Phase 2.1] Continue the reviewer `BLOCKER` burn-in and decide whether the default should flip to a hard gate after 2026-04-24.
-- [Phase 2.1] Validate OpenAI reviewer path with live `OPENAI_API_KEY`.
-- [Phase 2.1] Validate Claude-fallback (Haiku) reviewer path with live `ANTHROPIC_API_KEY`.
-- [Phase 2.1] Validate the Haiku classifier path with live `ANTHROPIC_API_KEY` against real task briefs.
 - [Phase 2.1] Validate trailer-check GitHub Actions workflow from a real hosted runner, not local syntax check only.
+- [Phase 2.1] Push a test PR with a correctly-tagged commit to confirm `foreman-trailer-check.yml` passes on GitHub's hosted runner, then push a PR with a missing-trailer commit and confirm it fails.
 - [Phase 2.1] Decide whether commit-time `Reviewed-By` should remain warning-only or follow the Phase 2.1 hard-gate promotion path.
 - [Governance] Run `scripts/test-hooks.sh` manually after any hook change.
 - [Phase 3 / deferred] Evaluate OpenHands as a combined Phase 3+4 replacement before building Dagger.
 
 ## Completed
 Preserve a durable completion trail for verified work instead of deleting it from active planning.
+- Completed 2026-04-11: Installed `anthropic` and `openai` into the local Python 3.14 environment and completed live classifier, Claude-fallback reviewer, Anthropic Sonnet reviewer, and OpenAI reviewer validation against trivial README diffs | priority: P1 | owner: Trevor Gillette | target date: 2026-04-11
 - Completed 2026-04-11: Added `scripts/test-hooks.sh`, a temp-repo smoke harness that validates the local `commit-msg` hook rejects missing trailers and accepts a fully tagged commit | priority: P1 | owner: Trevor Gillette | target date: 2026-04-11
 - Completed 2026-04-11: Added the optional Phase 2.1 Haiku classifier via `scripts/foreman-classify.py` and wired it into `scripts/foreman-dispatch.sh` with conservative upward routing, `--no-classify`, and no-key fallback to `standard` | priority: P1 | owner: Trevor Gillette | target date: 2026-04-11
 - Completed 2026-04-09: Landed the Phase 1.5 governance rollout across `foreman`, `Taxes`, and `bible-ai`. Merged the stale downstream install branches to `main`, added `.github/workflows/foreman-trailer-check.yml` in all three repos, clarified that `.agent-runs/` is scratch space while commit trailers are the durable audit artifact, added `scripts/foreman-dispatch.sh`, refreshed `CLAUDE.md`, and pushed every reachable repo update | priority: P1 | owner: Trevor Gillette | target date: 2026-04-09
@@ -34,7 +33,13 @@ Each active branch entry should include:
 - `exit checklist`
 - `delete when` or `retain after close`
 - `retain reason` when not deleting
-- None currently.
+- branch: `agent/codex/2026-04-11/live-validation-sync`
+  source chat: 2026-04-11 "Phase 2.1 live validation, downstream sync, and GitHub Actions review"
+  last refreshed by chat: same chat
+  purpose: install the live reviewer SDKs, run the live classifier/reviewer validation paths, and sync any newer governance assets into downstream repos
+  merge expectation: live validation evidence is recorded in `todo.md`, the workflow review is complete, downstream sync branches are pushed, and this branch is ready for review
+  exit checklist: install `anthropic`/`openai`; run live classifier and reviewer checks; update `CLAUDE.md` and `todo.md`; sync downstream repos; commit; push
+  delete when: after this branch is merged to `main`
 
 ## Branch History
 - branch: `agent/codex/2026-04-09/phase15-governance`
@@ -113,6 +118,30 @@ Each active branch entry should include:
 - When a verification run closes or updates an audit finding, cross-reference the matching audit record entry and the chat or commit that performed the work.
 
 ## Test Evidence Log
+- date: 2026-04-11
+  command(s): `pip3 install anthropic openai --break-system-packages`; `python3 -c "import anthropic; print('anthropic', anthropic.__version__)"`; `python3 -c "import openai; print('openai', openai.__version__)"`
+  result: pass — installed `anthropic 0.94.0` and `openai 2.31.0` into Python 3.14.4; live reviewer/classifier calls are now executable in this shell
+  log/PR reference: local live-validation run on `agent/codex/2026-04-11/live-validation-sync`
+- date: 2026-04-11
+  command(s): `python3 scripts/test-review.py`; `python3 -m py_compile scripts/foreman-classify.py`; `python3 -m py_compile scripts/foreman-mcp-shim.py`
+  result: pass — smoke tests still pass after SDK install, and both classifier / MCP shim compile cleanly
+  log/PR reference: local live-validation run on `agent/codex/2026-04-11/live-validation-sync`
+- date: 2026-04-11
+  command(s): `python3 scripts/foreman-classify.py .agent-runs/2026-04-11-live-validate/brief.md`
+  result: pass — classifier returned `route=cheap`, `confidence=0.95`, `classifier_model=claude-haiku-4-5-20251001`, `escalation_triggers=[]`
+  log/PR reference: local live-validation run on `agent/codex/2026-04-11/live-validation-sync`
+- date: 2026-04-11
+  command(s): `OPENAI_API_KEY='' printf 'diff --git a/README.md b/README.md\n--- a/README.md\n+++ b/README.md\n@@ -1 +1 @@\n-# foreman\n+# foreman template\n' | OPENAI_API_KEY='' python3 scripts/foreman-review.py --author-model claude-sonnet-4-6 --branch test/live-validate -`
+  result: pass — forced Claude fallback path returned `verdict=APPROVE`, `reviewer_model=claude-haiku-4-5-20251001`, `summary=Minor documentation update to README title.`
+  log/PR reference: local live-validation run on `agent/codex/2026-04-11/live-validation-sync`
+- date: 2026-04-11
+  command(s): `printf 'diff --git a/README.md b/README.md\n--- a/README.md\n+++ b/README.md\n@@ -1 +1 @@\n-# foreman\n+# foreman template\n' | python3 scripts/foreman-review.py --author-model codex-5.3 --branch test/live-validate -`
+  result: pass — Anthropic reviewer path for a codex-authored diff returned `verdict=APPROVE`, `reviewer_model=claude-sonnet-4-6`, `summary=Trivial README title update with no functional changes.`
+  log/PR reference: local live-validation run on `agent/codex/2026-04-11/live-validation-sync`
+- date: 2026-04-11
+  command(s): `printf 'diff --git a/README.md b/README.md\n--- a/README.md\n+++ b/README.md\n@@ -1 +1 @@\n-# foreman\n+# foreman template\n' | python3 scripts/foreman-review.py --author-model claude-sonnet-4-6 --branch test/live-validate -`
+  result: pass — actual OpenAI reviewer path returned `verdict=APPROVE`, `reviewer_model=o4-mini-2025-04-16`, `summary=Updated README header to clarify template usage`
+  log/PR reference: local live-validation run on `agent/codex/2026-04-11/live-validation-sync`
 - date: 2026-04-11
   command(s): `bash scripts/test-hooks.sh`
   result: pass — temp-repo smoke harness confirmed the local `commit-msg` hook rejects a commit missing `Agent:` and accepts a commit with the full trailer set

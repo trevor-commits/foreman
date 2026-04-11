@@ -165,6 +165,7 @@ def apply_policy(result: dict[str, Any]) -> dict[str, Any]:
     route = result["route"]
     reason = result["reason"].rstrip()
     triggers = result["escalation_triggers"]
+    classifier_model = result["classifier_model"]
 
     if triggers:
         if route != "escalation":
@@ -181,6 +182,7 @@ def apply_policy(result: dict[str, Any]) -> dict[str, Any]:
         "confidence": result["confidence"],
         "reason": reason,
         "escalation_triggers": triggers,
+        "classifier_model": classifier_model,
     }
 
 

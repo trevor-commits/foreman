@@ -12,6 +12,7 @@ Update this file when you open a branch (set status `open`) and when you close i
 
 | Branch | Agent | Date | Task | Merge Condition | Thread | Status | Notes |
 |--------|-------|------|------|-----------------|--------|--------|-------|
+| `agent/codex/2026-04-11/live-validation-sync` | codex-gpt-5 | 2026-04-11 | Install reviewer SDKs, run live Phase 2.1 validation, sync any newer governance assets downstream, and review trailer-check.yml | Live validation evidence recorded, workflow review completed, downstream sync committed where needed, and the branch is pushed | codex-desktop-2026-04-11 | open | Live API keys are available in this shell; this pass upgrades the local Python interpreter so the validation paths can execute instead of staying deferred |
 
 ---
 
