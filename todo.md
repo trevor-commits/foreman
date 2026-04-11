@@ -8,11 +8,12 @@ Capture the current goal plus the concrete dependency-ordered steps that are sti
 - [Phase 2.1] Validate the Haiku classifier path with live `ANTHROPIC_API_KEY` against real task briefs.
 - [Phase 2.1] Validate trailer-check GitHub Actions workflow from a real hosted runner, not local syntax check only.
 - [Phase 2.1] Decide whether commit-time `Reviewed-By` should remain warning-only or follow the Phase 2.1 hard-gate promotion path.
-- [Governance] Add a dedicated temp-repo smoke test script for `hooks/commit-msg` and `hooks/pre-push` so future audits do not have to recreate hook behavior manually.
+- [Governance] Run `scripts/test-hooks.sh` manually after any hook change.
 - [Phase 3 / deferred] Evaluate OpenHands as a combined Phase 3+4 replacement before building Dagger.
 
 ## Completed
 Preserve a durable completion trail for verified work instead of deleting it from active planning.
+- Completed 2026-04-11: Added `scripts/test-hooks.sh`, a temp-repo smoke harness that validates the local `commit-msg` hook rejects missing trailers and accepts a fully tagged commit | priority: P1 | owner: Trevor Gillette | target date: 2026-04-11
 - Completed 2026-04-11: Added the optional Phase 2.1 Haiku classifier via `scripts/foreman-classify.py` and wired it into `scripts/foreman-dispatch.sh` with conservative upward routing, `--no-classify`, and no-key fallback to `standard` | priority: P1 | owner: Trevor Gillette | target date: 2026-04-11
 - Completed 2026-04-09: Landed the Phase 1.5 governance rollout across `foreman`, `Taxes`, and `bible-ai`. Merged the stale downstream install branches to `main`, added `.github/workflows/foreman-trailer-check.yml` in all three repos, clarified that `.agent-runs/` is scratch space while commit trailers are the durable audit artifact, added `scripts/foreman-dispatch.sh`, refreshed `CLAUDE.md`, and pushed every reachable repo update | priority: P1 | owner: Trevor Gillette | target date: 2026-04-09
 
@@ -33,7 +34,13 @@ Each active branch entry should include:
 - `exit checklist`
 - `delete when` or `retain after close`
 - `retain reason` when not deleting
-- None currently.
+- branch: `agent/codex/2026-04-11/phase21-validation-pass`
+  source chat: 2026-04-11 "Phase 2.1 validation pass — live API tests, hooks smoke test, downstream sync, hard-gate comment"
+  last refreshed by chat: same chat
+  purpose: run the Phase 2.1 validation pass, add the reusable hook smoke test, sync missing governance artifacts to downstream repos, and record exactly what live validation is blocked locally
+  merge expectation: foreman validation assets updated, downstream sync commits pushed, and remaining live-API blockers logged in test evidence
+  exit checklist: add `scripts/test-hooks.sh`; update `hooks/pre-push`; record baseline/deferred validation in `todo.md`; sync Taxes and bible-ai; commit; push
+  delete when: after this validation branch is merged to `main`
 
 ## Branch History
 - branch: `agent/codex/2026-04-09/phase15-governance`
@@ -107,6 +114,22 @@ Each active branch entry should include:
 
 ## Test Evidence Log
 - date: 2026-04-11
+  command(s): `bash scripts/test-hooks.sh`
+  result: pass — temp-repo smoke harness confirmed the local `commit-msg` hook rejects a commit missing `Agent:` and accepts a commit with the full trailer set
+  log/PR reference: local validation run on `agent/codex/2026-04-11/phase21-validation-pass`
+- date: 2026-04-11
+  command(s): `echo $ANTHROPIC_API_KEY | head -c 8`; `echo $OPENAI_API_KEY | head -c 8`; `python3 -c "import anthropic; print('anthropic ok')" 2>&1`; `python3 -c "import openai; print('openai ok')" 2>&1`
+  result: partial — both API keys are present in the shell (`sk-ant-a`, `sk-proj-`), but the current `python3` cannot import `anthropic` or `openai`, so live reviewer/classifier calls are deferred until those SDKs are installed into a usable interpreter or virtualenv
+  log/PR reference: local validation intake on `agent/codex/2026-04-11/phase21-validation-pass`
+- date: 2026-04-11
+  command(s): `python3 scripts/test-review.py`; `python3 -m py_compile scripts/foreman-review.py`; `python3 -m py_compile scripts/foreman-classify.py`; `bash -n hooks/pre-push && bash -n hooks/commit-msg`
+  result: pass — baseline local reviewer/classifier smoke and hook syntax checks all succeeded before live validation attempts
+  log/PR reference: local validation run on `agent/codex/2026-04-11/phase21-validation-pass`
+- date: 2026-04-11
+  command(s): `python3 scripts/foreman-classify.py .agent-runs/2026-04-11-classifier-test/brief.md`; `echo "diff --git a/README.md b/README.md\n--- a/README.md\n+++ b/README.md\n@@ -1 +1 @@\n-# foreman\n+# foreman template" | python3 scripts/foreman-review.py --author-model codex-5.3 --branch test/validation -`; `echo "diff --git a/README.md b/README.md\n--- a/README.md\n+++ b/README.md\n@@ -1 +1 @@\n-# foreman\n+# foreman template" | python3 scripts/foreman-review.py --author-model claude-sonnet-4-6 --branch test/validation -`
+  result: deferred — live Anthropic and OpenAI validation was not run because the current `python3` interpreter is missing both SDK packages; unblock by installing `anthropic` and `openai` into the interpreter or a project venv, then rerun these exact commands with the existing API keys
+  log/PR reference: local validation intake on `agent/codex/2026-04-11/phase21-validation-pass`
+- date: 2026-04-11
   command(s): `python3 -m py_compile scripts/foreman-review.py`; `python3 scripts/test-review.py`; `bash -n hooks/pre-push`; `python3 -m py_compile scripts/foreman-classify.py`; `bash -n scripts/test-review.sh`; `bash -n scripts/foreman-dispatch.sh`
   result: pass — targeted fix pass replaced the bash smoke harness with a Python one, kept the compatibility wrapper syntax-valid, and revalidated the reviewer / classifier / hook syntax paths
   log/PR reference: local targeted fix run in `main`
@@ -133,6 +156,7 @@ Each active branch entry should include:
 | Pre-push gate | `bash -n hooks/pre-push && bash -n hooks/commit-msg` | Every push | Must pass (syntax valid) |
 | Reviewer script compile | `python3 -m py_compile scripts/foreman-review.py` | Every push | Must pass |
 | Reviewer smoke tests | `python3 scripts/test-review.py` | Every push | All tests PASS |
+| Hook smoke tests | `bash scripts/test-hooks.sh` | Every push after hook changes | All tests PASS |
 | Dispatcher syntax | `bash -n scripts/foreman-dispatch.sh` | Every push | Must pass |
 | Classifier compile | `python3 -m py_compile scripts/foreman-classify.py` | Every push | Must pass |
 

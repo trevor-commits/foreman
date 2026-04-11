@@ -12,6 +12,7 @@ Update this file when you open a branch (set status `open`) and when you close i
 
 | Branch | Agent | Date | Task | Merge Condition | Thread | Status | Notes |
 |--------|-------|------|------|-----------------|--------|--------|-------|
+| `agent/codex/2026-04-11/phase21-validation-pass` | codex-gpt-5 | 2026-04-11 | Run the Phase 2.1 validation pass, add a hook smoke test, sync missing downstream governance assets, and document what live validation is blocked locally | Foreman validation/test updates committed, downstream sync commits landed, and the remaining live API blockers recorded in `todo.md` | codex-desktop-2026-04-11 | open | Live reviewer/classifier calls are blocked in the current `python3` interpreter because `anthropic` and `openai` are not installed even though both API keys are present |
 
 ---
 
