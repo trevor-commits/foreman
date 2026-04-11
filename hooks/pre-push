@@ -40,6 +40,21 @@ for protected in "${PROTECTED_BRANCHES[@]}"; do
   fi
 done
 
+# ── Warn on non-compliant branch names ────────────────────────────────────────
+BRANCH_PATTERN='^(agent|review)/[a-z0-9_-]+/[0-9]{4}-[0-9]{2}-[0-9]{2}/[a-z0-9-]+$'
+if [[ ! "$CURRENT_BRANCH" =~ $BRANCH_PATTERN ]]; then
+  echo "⚠️  foreman: branch name does not follow the required convention."
+  echo "Expected: agent/<tool>/<YYYY-MM-DD>/<slug>"
+  echo "Got:      $CURRENT_BRANCH"
+  if [[ "${FOREMAN_STRICT_BRANCH:-}" == "1" ]]; then
+    echo "FOREMAN_STRICT_BRANCH=1 is set, so push is blocked."
+    echo ""
+    exit 1
+  fi
+  echo "Push proceeding — fix branch name before opening a PR."
+  echo ""
+fi
+
 # ── Gate runner ───────────────────────────────────────────────────────────────
 GATE_PASSED=true
 RESULTS=()

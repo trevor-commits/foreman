@@ -37,11 +37,8 @@ Rules:
 - Review passes prefix with `review/<reviewer>-of-<coder>/`
 - Never push directly to `main` or `master`
 
-⚠️ **Phase 1 note:** This convention is documented but not mechanically enforced by a hook.
-The `pre-push` hook only blocks pushes to protected branch names (`main`, `master`,
-`production`, `prod`). It does not validate the naming pattern of the source branch.
-Branch naming compliance currently depends on agent discipline and human review.
-Hook-based branch name validation is planned for a future phase.
+⚠️ **Phase 1 note:** As of Phase 2.1, the `pre-push` hook now warns on non-compliant
+branch names. Set `FOREMAN_STRICT_BRANCH=1` to promote this to a hard gate.
 
 ---
 
@@ -250,7 +247,7 @@ it in a committed file or in the commit trailer schema instead of relying on
 Run `hooks/install.sh` once after cloning this template into a new project.
 
 - `commit-msg` — hard-rejects commits missing `Agent`, `Thread`, `Task`, `Verified-By`; warns on missing/none-yet `Reviewed-By`; skips merge commits, squash!, fixup!, WIP, and wip
-- `pre-push` — heuristic gate: autodetects Python (pytest, ruff, optional mypy), Node (npm test/lint/build), or Makefile; reports all results; blocks on any failure; blocks direct push to `main`, `master`, `production`, `prod`
+- `pre-push` — heuristic gate: warns on non-compliant branch names by default (`FOREMAN_STRICT_BRANCH=1` makes that blocking), autodetects Python (pytest, ruff, optional mypy), Node (npm test/lint/build), or Makefile; reports all results; blocks on any failure; blocks direct push to `main`, `master`, `production`, `prod`
 
 Note: both hooks are **local only**. They do not fire for agents that commit from a remote sandbox.
 

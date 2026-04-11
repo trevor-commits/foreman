@@ -16,6 +16,19 @@ Entry format:
 
 ---
 
+## 2026-04-11 — Branch Naming Validation Starts As A Warning In Pre-Push
+
+**Decision:** Added branch-name validation to the `pre-push` hook using the foreman branch pattern. Non-compliant names warn by default, and `FOREMAN_STRICT_BRANCH=1` promotes the warning to a hard gate.
+
+**Why:** This closes the gap between documented branch naming rules and actual local enforcement without surprising existing workflows with a sudden hard block. The env flag mirrors `FOREMAN_HARD_GATE` and makes it easy to test or opt into stricter hygiene per machine before deciding whether hard enforcement should become the default.
+
+**Alternatives Considered:** Hard-block all non-compliant branch names immediately (rejected: too abrupt for a rule that was previously discipline-only). Leave naming entirely advisory in docs (rejected: the repo had already outgrown pure convention here).
+
+**Agent:** codex-gpt-5
+**Context:** 2026-04-11 Phase 2.1 branch validation rollout
+
+---
+
 ## 2026-04-11 — Phase 2.1 Adds An Optional Haiku Task Classifier
 
 **Decision:** Added `scripts/foreman-classify.py` and wired it into `scripts/foreman-dispatch.sh` as an optional classifier step. The classifier uses Haiku to return `cheap`, `standard`, or `escalation`, routes upward when confidence is below `0.7`, and forces `escalation` whenever `escalation_triggers` is non-empty. `--no-classify` skips the classifier.
