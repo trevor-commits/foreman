@@ -19,10 +19,13 @@ REVIEW_SCRIPT = REPO_ROOT / "scripts" / "foreman-review.py"
 DISPATCH_SCRIPT = REPO_ROOT / "scripts" / "foreman-dispatch.sh"
 CLASSIFY_SCRIPT = REPO_ROOT / "scripts" / "foreman-classify.py"
 LEDGER_PATH = Path(os.getenv("FOREMAN_LEDGER_PATH", str(REPO_ROOT / "BRANCH_LEDGER.md")))
+LAST_REVIEW_PATH = REPO_ROOT / ".agent-runs" / "last-review.json"
 
 ACTIVE_SECTION = "## Active Branches"
 CLOSED_SECTION = "## Closed Branches"
 STATUS_SECTION = "## Status Values"
+BRANCH_PATTERN = re.compile(r"^(agent|review)/[a-z0-9_-]+/[0-9]{4}-[0-9]{2}-[0-9]{2}/[a-z0-9-]+$")
+PROTECTED_BRANCHES = {"main", "master", "production", "prod"}
 
 
 class ShimError(Exception):
@@ -109,6 +112,40 @@ def parse_markdown_row(row: str) -> list[str]:
 
 def normalize_branch_cell(cell: str) -> str:
     return cell.strip().strip("`")
+
+
+def extract_trailer(body: str, key: str) -> str | None:
+    prefix = f"{key.lower()}:"
+    for line in body.splitlines():
+        if line.lower().startswith(prefix):
+            return line.split(":", 1)[1].strip()
+    return None
+
+
+def read_last_review() -> dict[str, Any] | None:
+    if not LAST_REVIEW_PATH.exists():
+        return None
+
+    try:
+        review = json.loads(LAST_REVIEW_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return {
+            "error": {
+                "code": "invalid_json",
+                "message": f"Could not parse {LAST_REVIEW_PATH}.",
+                "details": {"reason": str(exc)},
+            }
+        }
+
+    if not isinstance(review, dict):
+        return {
+            "error": {
+                "code": "invalid_json",
+                "message": f"{LAST_REVIEW_PATH} did not contain a JSON object.",
+            }
+        }
+
+    return review
 
 
 def load_ledger() -> str:
@@ -404,12 +441,75 @@ def tool_foreman_ledger_close(payload: dict[str, Any]) -> None:
     return None
 
 
+def tool_foreman_status(payload: dict[str, Any]) -> dict[str, Any]:
+    _ = payload
+    branch_result = run_command(["git", "rev-parse", "--abbrev-ref", "HEAD"])
+    if branch_result.returncode != 0:
+        raise ShimError(
+            "git_failed",
+            "Could not determine the current branch.",
+            {"stderr": branch_result.stderr, "stdout": branch_result.stdout},
+        )
+
+    branch = branch_result.stdout.strip()
+    commit_result = run_command(["git", "log", "-1", "--format=%B"])
+    if commit_result.returncode != 0:
+        raise ShimError(
+            "git_failed",
+            "Could not load the most recent commit message.",
+            {"stderr": commit_result.stderr, "stdout": commit_result.stdout},
+        )
+
+    ledger_status = "not found"
+    row_found = False
+    try:
+        text = load_ledger()
+        lines = text.splitlines()
+        _, _, active_rows = find_table_body(lines, ACTIVE_SECTION, CLOSED_SECTION)
+        _, _, closed_rows = find_table_body(lines, CLOSED_SECTION, STATUS_SECTION)
+        for row in active_rows:
+            cells = parse_markdown_row(row)
+            if cells and normalize_branch_cell(cells[0]) == branch:
+                row_found = True
+                ledger_status = cells[6] if len(cells) > 6 else "open"
+                break
+        if not row_found:
+            for row in closed_rows:
+                cells = parse_markdown_row(row)
+                if cells and normalize_branch_cell(cells[0]) == branch:
+                    row_found = True
+                    ledger_status = "closed"
+                    break
+    except ShimError:
+        ledger_status = "not available"
+
+    commit_body = commit_result.stdout
+    return {
+        "branch": branch,
+        "branch_compliant": bool(BRANCH_PATTERN.match(branch)),
+        "protected_branch": branch in PROTECTED_BRANCHES,
+        "last_commit_trailers": {
+            "Agent": extract_trailer(commit_body, "Agent"),
+            "Thread": extract_trailer(commit_body, "Thread"),
+            "Task": extract_trailer(commit_body, "Task"),
+            "Verified-By": extract_trailer(commit_body, "Verified-By"),
+            "Reviewed-By": extract_trailer(commit_body, "Reviewed-By"),
+        },
+        "last_review": read_last_review(),
+        "ledger": {
+            "row_found": row_found,
+            "status": ledger_status,
+        },
+    }
+
+
 TOOLS: dict[str, Callable[[dict[str, Any]], Any]] = {
     "foreman_review": tool_foreman_review,
     "foreman_dispatch": tool_foreman_dispatch,
     "foreman_classify": tool_foreman_classify,
     "foreman_ledger_open": tool_foreman_ledger_open,
     "foreman_ledger_close": tool_foreman_ledger_close,
+    "foreman_status": tool_foreman_status,
 }
 
 

@@ -3,6 +3,7 @@
 ## Active Next Steps
 Capture the current goal plus the concrete dependency-ordered steps that are still open.
 - [Governance] `Taxes` and `bible-ai` currently drift on `scripts/foreman-review.py`, `scripts/foreman-dispatch.sh`, `scripts/requirements.txt`, and `.github/workflows/foreman-trailer-check.yml`; review and sync those repos before the next governance rollout.
+- [MCP] Validate `scripts/foreman-mcp-server.py` from a real Claude Code or Claude desktop MCP client session and confirm stdio transport plus tool registration work end to end.
 - [Phase 2.1] Continue the reviewer `BLOCKER` burn-in and decide whether the default should flip to a hard gate after 2026-04-24.
 - [Phase 2.1] Run `python3 scripts/foreman-calibration.py --days 14` on 2026-04-24 to evaluate `BLOCKER` accuracy before promoting `FOREMAN_HARD_GATE=1`.
 - [Phase 2.1] `test-foreman-tooling.yml` now gives hosted CI coverage for the foreman test suite on every push and PR; the remaining hosted validation gap is the `foreman-trailer-check.yml` pass/fail PR pair.
@@ -122,6 +123,10 @@ Each active branch entry should include:
 - When a verification run closes or updates an audit finding, cross-reference the matching audit record entry and the chat or commit that performed the work.
 
 ## Test Evidence Log
+- date: 2026-04-11
+  command(s): `pip3 install mcp --break-system-packages 2>&1 | tail -3`; `python3 -m py_compile scripts/foreman-mcp-server.py`; `python3 -c "from scripts.foreman_mcp_server import mcp; print(f'tools: {list(mcp._tools.keys())}')"`
+  result: pass — installed the official `mcp` package with FastMCP support, the executable MCP server entrypoint compiles cleanly, and the import smoke check lists the registered tools
+  log/PR reference: local verification run in `main`
 - date: 2026-04-11
   command(s): `bash scripts/foreman-drift-check.sh --repos $'/Users/gillettes/Coding Projects/Taxes\n/Users/gillettes/Coding Projects/bible-ai'`
   result: pass — report mode ran cleanly and found 8 drifted files total across `Taxes` and `bible-ai`: `scripts/foreman-review.py`, `scripts/foreman-dispatch.sh`, `scripts/requirements.txt`, and `.github/workflows/foreman-trailer-check.yml` in each repo; the trailer workflow warnings correctly called out repo-specific customization risk

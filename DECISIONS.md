@@ -16,6 +16,27 @@ Entry format:
 
 ---
 
+## 2026-04-11 — Foreman Uses FastMCP From The Official `mcp` Package
+
+**Decision:** Use FastMCP from the official `mcp` package for foreman's real MCP server. The
+server lives at `scripts/foreman-mcp-server.py` and exposes the same governance tool surface
+already defined by `scripts/foreman-mcp-shim.py`.
+
+**Why:** The `mcp` package is Anthropic-maintained, directly compatible with Claude Code's MCP
+client, and keeps the server implementation small. The tool-decorator pattern maps cleanly to
+the shim structure already in place, so the real server can stay transport-focused while the
+existing shim remains the shared wrapper around foreman's governance scripts and ledger logic.
+
+**Alternatives Considered:** Keep only the CLI shim with no real MCP server yet (rejected:
+the framework decision is now resolved and the real integration path is needed). Use a lower-
+level custom server or alternative SDK (rejected: more boilerplate and less direct alignment
+with Claude Code and Claude desktop for no current benefit).
+
+**Agent:** codex-gpt-5
+**Context:** 2026-04-11 FastMCP server implementation
+
+---
+
 ## 2026-04-11 — Reviewer Hook Defers Provider Detection To `foreman-review.py`
 
 **Decision:** The `pre-push` hook now resolves its diff base from explicit refs (`refs/heads/main`, then `refs/remotes/origin/main`) and always hands the diff to `scripts/foreman-review.py` when `python3` and the script itself are available. The shell hook no longer pre-checks for the `anthropic` package.

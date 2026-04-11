@@ -18,7 +18,7 @@ Entry format:
 
 ## #7 — Should foreman's MCP server use FastMCP, `mcp-python-sdk`, or a custom implementation?
 
-**Status:** open
+**Status:** resolved (→ DECISIONS.md)
 
 **Background:** Phase 2.1 now has an interface scaffold for foreman's governance tool
 surface, but it is intentionally implemented as a CLI shim rather than a real MCP server.
@@ -39,7 +39,11 @@ implementation if the chosen backend imposes unusual transport or lifecycle cons
 OpenHands or another runtime imposes constraints on transport, process lifecycle, auth, or
 tool registration.
 
-**Opened:** 2026-04-11
+**Resolution:** Using the official `mcp` package (FastMCP) — Anthropic-maintained, most
+compatible with Claude Code and Claude desktop. Implementation in
+`scripts/foreman-mcp-server.py`. Resolved 2026-04-11.
+
+**Opened:** 2026-04-11 | **Resolved:** 2026-04-11
 
 ---
 

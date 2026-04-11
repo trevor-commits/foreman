@@ -35,6 +35,7 @@ jobs:
           python3 -m py_compile scripts/foreman-review.py
           python3 -m py_compile scripts/foreman-classify.py
           python3 -m py_compile scripts/foreman-mcp-shim.py
+          python3 -m py_compile scripts/foreman-mcp-server.py
           python3 -m py_compile scripts/foreman-calibration.py 2>/dev/null || \
             echo "foreman-calibration.py not yet present — skipping"
 
@@ -49,6 +50,9 @@ jobs:
           python3 scripts/foreman-mcp-shim.py --tool foreman_review \
             --args '{"diff":"","author_model":"codex","branch":"test"}' | \
           python3 -c "import sys,json; d=json.load(sys.stdin); assert d.get('verdict')=='APPROVE'"
+
+      - name: MCP server smoke check
+        run: python3 -c "from scripts.foreman_mcp_server import mcp; print(f'tools: {list(mcp._tools.keys())}')"
 
   test-trailer-check:
     runs-on: ubuntu-latest

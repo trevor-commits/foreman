@@ -1,10 +1,10 @@
-# Foreman MCP Tool Surface (Scaffold)
+# Foreman MCP Tool Surface
 
 This document defines the planned MCP-facing governance tool surface for foreman.
-It is intentionally a contract spec, not a server implementation. The current
-proof-of-concept transport is `scripts/foreman-mcp-shim.py`, which exposes the
-same tools through a CLI so different backends can validate the interface before
-foreman commits to a specific MCP server framework.
+The contract now has a real server implementation at `scripts/foreman-mcp-server.py`
+using the official `mcp` package (FastMCP). The CLI shim at
+`scripts/foreman-mcp-shim.py` remains in place so CLI callers and the MCP server
+share the same tool contract and underlying wrappers.
 
 ## CLI Shim Contract
 
@@ -18,6 +18,8 @@ Behavior:
 - Success: prints the tool result as JSON to stdout and exits `0`
 - Failure: prints `{"error": {"code": "...", "message": "...", "details": ...}}`
   to stdout and exits non-zero
+
+The FastMCP server exposes the same tool names and payload shapes over MCP.
 
 ---
 
@@ -252,6 +254,59 @@ the eventual MCP tool contract before extracting ledger helpers into their own s
 - `ledger_not_found`: the branch was not present in the active ledger
 - `ledger_format_error`: the ledger file does not match the expected table structure
 - `write_failed`: the shim could not persist the updated ledger file
+
+### API key requirements
+
+None.
+
+---
+
+## `foreman_status() -> StatusResult`
+
+Returns the current branch governance state as structured data.
+
+### Input schema
+
+```json
+{}
+```
+
+### Output schema
+
+```json
+{
+  "branch": "string",
+  "branch_compliant": true,
+  "protected_branch": false,
+  "last_commit_trailers": {
+    "Agent": "string | null",
+    "Thread": "string | null",
+    "Task": "string | null",
+    "Verified-By": "string | null",
+    "Reviewed-By": "string | null"
+  },
+  "last_review": {
+    "verdict": "APPROVE | REQUEST_CHANGES | BLOCKER",
+    "summary": "string",
+    "issues": [],
+    "reviewer_model": "string"
+  },
+  "ledger": {
+    "row_found": true,
+    "status": "string"
+  }
+}
+```
+
+### Underlying command
+
+No standalone script exists yet. The shim inspects git state, commit trailers,
+`.agent-runs/last-review.json`, and `BRANCH_LEDGER.md` directly.
+
+### Error cases
+
+- `git_failed`: current branch or last commit could not be read
+- `invalid_json`: `.agent-runs/last-review.json` existed but could not be parsed
 
 ### API key requirements
 

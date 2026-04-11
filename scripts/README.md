@@ -41,6 +41,18 @@ Required env vars:
 - `scripts/foreman-merge-check.sh` evaluates the merge conditions and exits `0` only when the branch is governance-ready for PR
 - `scripts/foreman-close.sh <branch> <merged|abandoned> [reason]` moves a branch from Active Branches to Closed Branches and, for merged branches, attempts local and remote branch deletion
 - `scripts/foreman-drift-check.sh [--fix] [--repos "..."]` detects drift between foreman canonical governance files and downstream repos, and can auto-sync missing or drifted files without committing them
+- `scripts/foreman-mcp-server.py` starts the FastMCP server that exposes foreman's governance tools to MCP clients such as Claude Code and Claude desktop
+
+## MCP Server
+
+The real MCP server now lives at `scripts/foreman-mcp-server.py`, backed by the official
+Anthropic-maintained `mcp` package.
+
+To connect foreman to Claude Code: add foreman to your `~/.claude/mcp.json` or run:
+
+```bash
+claude mcp add foreman python3 "$(pwd)/scripts/foreman-mcp-server.py"
+```
 
 ## Telemetry And Calibration
 
