@@ -2,11 +2,13 @@
 
 ## Active Next Steps
 Capture the current goal plus the concrete dependency-ordered steps that are still open.
+- [Governance] `Taxes` and `bible-ai` currently drift on `scripts/foreman-review.py`, `scripts/foreman-dispatch.sh`, `scripts/requirements.txt`, and `.github/workflows/foreman-trailer-check.yml`; review and sync those repos before the next governance rollout.
 - [Phase 2.1] Continue the reviewer `BLOCKER` burn-in and decide whether the default should flip to a hard gate after 2026-04-24.
 - [Phase 2.1] Run `python3 scripts/foreman-calibration.py --days 14` on 2026-04-24 to evaluate `BLOCKER` accuracy before promoting `FOREMAN_HARD_GATE=1`.
 - [Phase 2.1] `test-foreman-tooling.yml` now gives hosted CI coverage for the foreman test suite on every push and PR; the remaining hosted validation gap is the `foreman-trailer-check.yml` pass/fail PR pair.
 - [Phase 2.1] Push a test PR with a correctly-tagged commit to confirm `foreman-trailer-check.yml` passes on GitHub's hosted runner, then push a PR with a missing-trailer commit and confirm it fails.
 - [Phase 2.1] Decide whether commit-time `Reviewed-By` should remain warning-only or follow the Phase 2.1 hard-gate promotion path.
+- [Governance] Run `scripts/foreman-drift-check.sh --fix` before any major phase release to ensure downstream repos are current.
 - [Governance] Run `scripts/test-hooks.sh` manually after any hook change.
 - [Governance] Add `foreman-close.sh` to the post-merge checklist in `.github/PULL_REQUEST_TEMPLATE.md` so reviewers run it after merging.
 - [Phase 3 / deferred] Evaluate OpenHands as a combined Phase 3+4 replacement before building Dagger.
@@ -120,6 +122,14 @@ Each active branch entry should include:
 - When a verification run closes or updates an audit finding, cross-reference the matching audit record entry and the chat or commit that performed the work.
 
 ## Test Evidence Log
+- date: 2026-04-11
+  command(s): `bash scripts/foreman-drift-check.sh --repos $'/Users/gillettes/Coding Projects/Taxes\n/Users/gillettes/Coding Projects/bible-ai'`
+  result: pass — report mode ran cleanly and found 8 drifted files total across `Taxes` and `bible-ai`: `scripts/foreman-review.py`, `scripts/foreman-dispatch.sh`, `scripts/requirements.txt`, and `.github/workflows/foreman-trailer-check.yml` in each repo; the trailer workflow warnings correctly called out repo-specific customization risk
+  log/PR reference: local verification run in `main`
+- date: 2026-04-11
+  command(s): `bash -n scripts/foreman-drift-check.sh`
+  result: pass — the new downstream drift detector shell script is syntax-valid
+  log/PR reference: local verification run in `main`
 - date: 2026-04-11
   command(s): `python3 -m pip install --break-system-packages -r scripts/requirements.txt`; `python3 -c "import yaml; yaml.safe_load(open('.github/workflows/test-foreman-tooling.yml'))"`
   result: pass — installed the YAML parser dependency required by the new workflow sanity check, and the new `test-foreman-tooling.yml` workflow parses cleanly as YAML

@@ -40,6 +40,7 @@ Required env vars:
 - `scripts/foreman-status.sh` prints the current branch's governance state, last commit trailers, last review verdict, ledger row status, and active gate env vars
 - `scripts/foreman-merge-check.sh` evaluates the merge conditions and exits `0` only when the branch is governance-ready for PR
 - `scripts/foreman-close.sh <branch> <merged|abandoned> [reason]` moves a branch from Active Branches to Closed Branches and, for merged branches, attempts local and remote branch deletion
+- `scripts/foreman-drift-check.sh [--fix] [--repos "..."]` detects drift between foreman canonical governance files and downstream repos, and can auto-sync missing or drifted files without committing them
 
 ## Telemetry And Calibration
 
