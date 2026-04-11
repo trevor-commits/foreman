@@ -33,13 +33,7 @@ Each active branch entry should include:
 - `exit checklist`
 - `delete when` or `retain after close`
 - `retain reason` when not deleting
-- branch: `agent/codex/2026-04-10/phase2-reviewer`
-  source chat: 2026-04-11 "Full audit of the foreman repository"
-  last refreshed by chat: same chat
-  purpose: audit and remediate hook/script/workflow/doc drift after the Phase 2 / 2.1 rollout
-  merge expectation: current audit fixes land, required syntax checks pass, audit/test evidence is recorded, and the branch is pushed
-  exit checklist: update hook/script/workflow/docs drift; refresh `BRANCH_LEDGER.md`; append audit + test evidence to `todo.md`; commit; push
-  delete when: after this branch is merged to `main` and the active ledger entry is no longer needed
+- None currently.
 
 ## Branch History
 - branch: `agent/codex/2026-04-09/phase15-governance`
@@ -50,10 +44,16 @@ Each active branch entry should include:
   cleanup status: branch merged; local and remote cleanup still pending
 - branch: `agent/codex/2026-04-10/phase2-reviewer`
   source chat: 2026-04-10 "Build the Phase 2 automated cross-model review path"
-  last refreshed by chat: 2026-04-11 full audit chat
+  last refreshed by chat: 2026-04-11 "commit all uncommitted work, merge/delete all branches"
   purpose: originally land the Phase 2 reviewer, later reused for Phase 2.1 follow-up and audit remediation before merge
-  outcome: Phase 2 reviewer shipped as a soft gate on 2026-04-11; branch remains active for follow-up audit/remediation work
-  cleanup status: retained until the current audit/remediation pass is merged or replaced by a fresh follow-up branch
+  outcome: merged to `main` on 2026-04-11 after the audit/remediation pass closed hook, script, workflow, and documentation drift and recorded the verification evidence in this file
+  cleanup status: branch deleted locally and on `origin` after merge
+- branch: `agent/codex/2026-04-11/branch-cleanup`
+  source chat: 2026-04-11 "commit all uncommitted work, merge/delete all branches"
+  last refreshed by chat: same chat
+  purpose: close the retained Phase 2 branch cleanly, land it to `main`, and remove merged branches
+  outcome: merged to `main` on 2026-04-11 after the branch ledger and history were closed out for the retained reviewer branch
+  cleanup status: branch deleted locally and on `origin` after merge
 
 ## Audit Record Convention
 - Record each audit, ship-check, or substantial verification-driven review in an easy-to-find project audit log entry.
