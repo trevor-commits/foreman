@@ -233,6 +233,10 @@ if [[ -n "${REVIEW_DIFF:-}" ]]; then
   REVIEW_OUTPUT_PATH="${REVIEW_OUTPUT_PATH:-$REVIEW_JSON_PATH}"
 
   if [ "$REVIEWER_EXIT" -eq 1 ]; then
+    # Phase 2.1 hard-gate promotion: set FOREMAN_HARD_GATE=1 to block on BLOCKER verdicts.
+    # Planned default promotion: 2026-04-24 (after two-week burn-in from 2026-04-11).
+    # To promote: set FOREMAN_HARD_GATE=1 in ~/.zshrc or ~/.bash_profile and record the
+    # decision in DECISIONS.md with date and any false-BLOCKER evidence from the burn-in.
     if [[ "${FOREMAN_HARD_GATE:-}" == "1" ]]; then
       echo "REVIEWER VERDICT: BLOCKER — hard gate active, push blocked."
       echo "Full review: $REVIEW_OUTPUT_PATH"
