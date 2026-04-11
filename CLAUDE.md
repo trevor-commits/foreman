@@ -78,6 +78,7 @@ Completed through 2026-04-11 and present on disk on `main`:
 - `FOREMAN_HARD_GATE=1` now promotes reviewer `BLOCKER` verdicts to a hard gate without editing the hook
 - `FOREMAN_STRICT_BRANCH=1` now promotes non-compliant branch-name warnings to a hard gate without editing the hook
 - `docs/mcp-tools.md` and `scripts/foreman-mcp-shim.py` now define a proof-of-concept MCP boundary for the existing governance operations
+- `scripts/foreman-mcp-server.py` now exposes all 6 governance tools as a real FastMCP server compatible with Claude Code's MCP client. Connect via: `claude mcp add foreman python3 scripts/foreman-mcp-server.py`. Requires: `pip3 install mcp --break-system-packages`
 - local Python 3.14 now has `anthropic` and `openai` installed, and the live classifier, Claude-fallback reviewer path, Anthropic Sonnet reviewer path, and OpenAI reviewer path have all been exercised successfully
 
 Skipped or caveated:
@@ -126,6 +127,7 @@ See DECISIONS.md for full history.
 - The pre-push hook automatically amends the last commit's `Reviewed-By` trailer when the reviewer runs successfully, then stops that push so the next `git push` sends the amended SHA. If you push with `--no-verify`, `Reviewed-By` stays `none-yet`.
 - `scripts/foreman-review.py` skips live review if the required API key or SDK package is missing and writes `.agent-runs/last-review.json` whenever it can persist a review payload locally.
 - Live reviewer and classifier paths require `anthropic` and `openai` packages. Install via `pip3 install -r scripts/requirements.txt --break-system-packages`. Without them, the reviewer silently skips and the classifier defaults to `standard`.
+- The FastMCP server (`scripts/foreman-mcp-server.py`) requires the `mcp` package. Install via `pip3 install -r scripts/requirements.txt --break-system-packages`. Without it, the server file compiles but cannot run.
 - Local hooks still matter, but `.github/workflows/foreman-trailer-check.yml` now covers
   the server-side enforcement gap for pushes and pull requests to `main`.
 - `.agent-runs/` is optional local scratch space only. Durable audit context lives in

@@ -55,6 +55,9 @@ To connect foreman to Claude Code: add foreman to your `~/.claude/mcp.json` or r
 claude mcp add foreman python3 "$(pwd)/scripts/foreman-mcp-server.py"
 ```
 
+Note: run `claude mcp add` from the repo root directory, or set `cwd` explicitly
+in your MCP client config to the absolute path of this repo.
+
 ## Telemetry And Calibration
 
 - `scripts/foreman-review.py` writes the latest review to `.agent-runs/last-review.json` and appends telemetry to `.agent-runs/review-log.jsonl`

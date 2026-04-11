@@ -13,12 +13,22 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 SCRIPT_PATH = ROOT_DIR / "scripts" / "foreman-review.py"
+MCP_SERVER_PATH = ROOT_DIR / "scripts" / "foreman-mcp-server.py"
 
 
 def load_module():
     spec = importlib.util.spec_from_file_location("foreman_review", SCRIPT_PATH)
     if spec is None or spec.loader is None:
         raise RuntimeError(f"Unable to load {SCRIPT_PATH}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def load_mcp_server_module():
+    spec = importlib.util.spec_from_file_location("foreman_mcp_server", MCP_SERVER_PATH)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Unable to load {MCP_SERVER_PATH}")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -170,6 +180,14 @@ def test_append_telemetry_writes_jsonl_record() -> None:
         assert record["timestamp"].endswith("Z"), record
 
 
+def test_mcp_foreman_review_empty_diff_returns_approve() -> None:
+    server_module = load_mcp_server_module()
+    review = server_module.foreman_review("", "codex-5.3", "agent/codex/2026-04-11/test-mcp-review")
+    assert review["verdict"] == "APPROVE", review
+    assert review["summary"] == "Empty diff — nothing to review", review
+    assert isinstance(review.get("reviewer_model"), str) and review["reviewer_model"], review
+
+
 def main() -> int:
     tests = [
         ("empty diff returns APPROVE without an API call", test_empty_diff_review),
@@ -182,6 +200,7 @@ def main() -> int:
         ("validate_review accepts a valid review payload with reviewer_model", test_validate_review_accepts_valid_review_with_reviewer_model),
         ("validate_review rejects an issue missing note", test_validate_review_rejects_issue_missing_note),
         ("append_telemetry writes a JSONL telemetry record", test_append_telemetry_writes_jsonl_record),
+        ("foreman_review MCP tool with empty diff returns APPROVE", test_mcp_foreman_review_empty_diff_returns_approve),
     ]
 
     for description, fn in tests:

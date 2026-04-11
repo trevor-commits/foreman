@@ -56,9 +56,12 @@ jobs:
       - name: MCP server smoke check
         run: |
           python3 <<'PY'
-          from scripts.foreman_mcp_server import mcp
+          import importlib.util
 
-          print(f"tools: {list(mcp._tools.keys())}")
+          spec = importlib.util.spec_from_file_location('srv', 'scripts/foreman-mcp-server.py')
+          mod = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(mod)
+          print(f"tools: {list(mod.mcp._tools.keys())}")
           PY
 
   test-trailer-check:

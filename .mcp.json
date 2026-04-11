@@ -2,8 +2,7 @@
   "mcpServers": {
     "foreman": {
       "command": "python3",
-      "args": ["scripts/foreman-mcp-server.py"],
-      "cwd": "<repo root — leave as placeholder, user sets this>"
+      "args": ["scripts/foreman-mcp-server.py"]
     }
   }
 }
