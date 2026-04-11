@@ -4,7 +4,7 @@
 Capture the current goal plus the concrete dependency-ordered steps that are still open.
 - [Phase 2.1] Continue the reviewer `BLOCKER` burn-in and decide whether the default should flip to a hard gate after 2026-04-24.
 - [Phase 2.1] Run `python3 scripts/foreman-calibration.py --days 14` on 2026-04-24 to evaluate `BLOCKER` accuracy before promoting `FOREMAN_HARD_GATE=1`.
-- [Phase 2.1] Validate trailer-check GitHub Actions workflow from a real hosted runner, not local syntax check only.
+- [Phase 2.1] `test-foreman-tooling.yml` now gives hosted CI coverage for the foreman test suite on every push and PR; the remaining hosted validation gap is the `foreman-trailer-check.yml` pass/fail PR pair.
 - [Phase 2.1] Push a test PR with a correctly-tagged commit to confirm `foreman-trailer-check.yml` passes on GitHub's hosted runner, then push a PR with a missing-trailer commit and confirm it fails.
 - [Phase 2.1] Decide whether commit-time `Reviewed-By` should remain warning-only or follow the Phase 2.1 hard-gate promotion path.
 - [Governance] Run `scripts/test-hooks.sh` manually after any hook change.
@@ -37,10 +37,10 @@ Each active branch entry should include:
 - `retain reason` when not deleting
 - branch: `agent/codex/2026-04-11/enrich-reviewer-prompt`
   source chat: 2026-04-11 "rewrite build_prompt() to inject the full foreman governance context"
-  last refreshed by chat: 2026-04-11 "fix multi-commit author detection and add trailer validation scan to pre-push"
-  purpose: align the reviewer governance prompt, add persistent review telemetry and calibration, close the `Reviewed-By` workflow gap, wire branch lifecycle automation into dispatch/close flows, add operator-facing status and merge-readiness commands, and harden `hooks/pre-push` with branch-wide author detection plus local trailer validation
-  merge expectation: merge after `bash -n hooks/pre-push`, `bash scripts/test-hooks.sh`, `bash -n scripts/foreman-dispatch.sh`, `bash -n scripts/foreman-close.sh`, `bash -n scripts/foreman-status.sh`, `bash -n scripts/foreman-merge-check.sh`, the empty-diff manual hook check, `python3 -m py_compile scripts/foreman-calibration.py`, and `python3 scripts/test-review.py` pass and the branch receives a second-model review with a compliant `Reviewed-By` trailer
-  exit checklist: keep `hooks/pre-push`, `AGENTS.project.md`, `CLAUDE.md`, `.github/PULL_REQUEST_TEMPLATE.md`, `scripts/foreman-review.py`, `scripts/foreman-calibration.py`, `scripts/foreman-dispatch.sh`, `scripts/foreman-close.sh`, `scripts/foreman-status.sh`, `scripts/foreman-merge-check.sh`, `scripts/README.md`, `scripts/test-review.py`, and `scripts/test-hooks.sh` aligned, keep the branch ledger row open until review is complete, then mark the branch ready/merged
+  last refreshed by chat: 2026-04-11 "add GitHub Actions CI workflow for foreman test suite"
+  purpose: align the reviewer governance prompt, add persistent review telemetry and calibration, close the `Reviewed-By` workflow gap, wire branch lifecycle automation into dispatch/close flows, add operator-facing status and merge-readiness commands, harden `hooks/pre-push` with branch-wide author detection plus local trailer validation, and add hosted CI coverage for the foreman tooling test suite
+  merge expectation: merge after `bash -n hooks/pre-push`, `bash scripts/test-hooks.sh`, `bash -n scripts/foreman-dispatch.sh`, `bash -n scripts/foreman-close.sh`, `bash -n scripts/foreman-status.sh`, `bash -n scripts/foreman-merge-check.sh`, `python3 -c "import yaml; yaml.safe_load(open('.github/workflows/test-foreman-tooling.yml'))"`, the empty-diff manual hook check, `python3 -m py_compile scripts/foreman-calibration.py`, and `python3 scripts/test-review.py` pass and the branch receives a second-model review with a compliant `Reviewed-By` trailer
+  exit checklist: keep `hooks/pre-push`, `AGENTS.project.md`, `CLAUDE.md`, `.github/PULL_REQUEST_TEMPLATE.md`, `.github/workflows/test-foreman-tooling.yml`, `scripts/foreman-review.py`, `scripts/foreman-calibration.py`, `scripts/foreman-dispatch.sh`, `scripts/foreman-close.sh`, `scripts/foreman-status.sh`, `scripts/foreman-merge-check.sh`, `scripts/README.md`, `scripts/requirements.txt`, `scripts/test-review.py`, and `scripts/test-hooks.sh` aligned, keep the branch ledger row open until review is complete, then mark the branch ready/merged
   delete when: after merge to `main`
 
 ## Branch History
@@ -120,6 +120,10 @@ Each active branch entry should include:
 - When a verification run closes or updates an audit finding, cross-reference the matching audit record entry and the chat or commit that performed the work.
 
 ## Test Evidence Log
+- date: 2026-04-11
+  command(s): `python3 -m pip install --break-system-packages -r scripts/requirements.txt`; `python3 -c "import yaml; yaml.safe_load(open('.github/workflows/test-foreman-tooling.yml'))"`
+  result: pass — installed the YAML parser dependency required by the new workflow sanity check, and the new `test-foreman-tooling.yml` workflow parses cleanly as YAML
+  log/PR reference: local verification run on `agent/codex/2026-04-11/enrich-reviewer-prompt`
 - date: 2026-04-11
   command(s): `bash -n hooks/pre-push`; `bash scripts/test-hooks.sh`; temp-repo push proof with a stub `scripts/foreman-review.py` plus branch commits authored by `codex-gpt-5`, `codex-gpt-5`, and `claude-sonnet-4-6`
   result: pass — `hooks/pre-push` is syntax-valid, `scripts/test-hooks.sh` confirms the pre-push trailer scan warns when a non-tip branch commit is missing `Agent:`, and the mixed-author temp-repo push prints `detected author model 'codex-gpt-5' from 3 commits on branch`, proving the hook no longer routes review from the last commit alone
@@ -216,6 +220,7 @@ Each active branch entry should include:
 | Reviewer script compile | `python3 -m py_compile scripts/foreman-review.py` | Every push | Must pass |
 | Reviewer smoke tests | `python3 scripts/test-review.py` | Every push | All tests PASS |
 | Hook smoke tests | `bash scripts/test-hooks.sh` | Every push after hook changes | All tests PASS |
+| Hosted CI tooling suite | `.github/workflows/test-foreman-tooling.yml` | Every push and PR to `main` | Both GitHub Actions jobs pass |
 | Dispatcher syntax | `bash -n scripts/foreman-dispatch.sh` | Every push | Must pass |
 | Classifier compile | `python3 -m py_compile scripts/foreman-classify.py` | Every push | Must pass |
 | Hard-gate calibration | `python3 scripts/foreman-calibration.py --days 14` | Once on 2026-04-24 (burn-in checkpoint) | READY verdict from the script |
