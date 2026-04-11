@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
         with:
           fetch-depth: 0
 
@@ -96,7 +96,7 @@ jobs:
             reviewed_by="$(grep -iE '^Reviewed-By:' <<<"$body" | head -1 || true)"
             if [[ -z "$reviewed_by" || "$reviewed_by" =~ [Nn][Oo][Nn][Ee]-[Yy][Ee][Tt] ]]; then
               warnings=$((warnings + 1))
-              echo "::warning::Commit ${sha} has no effective Reviewed-By trailer. Warning only in Phase 1."
+              echo "::warning::Commit ${sha} has no effective Reviewed-By trailer. Warning only in Phase 2; Phase 2.1 may promote review enforcement later."
             fi
           done
 

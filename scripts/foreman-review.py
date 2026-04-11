@@ -9,6 +9,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -135,10 +136,11 @@ def call_openai(prompt: str, model: str) -> tuple[str, str]:
     if output_text:
         return output_text, getattr(response, "model", model)
 
-    # This fallback targets the OpenAI Responses API object shape used by `client.responses.create`
-    # in the current SDK, where text can arrive under `response.output[*].content[*].text`.
-    # If the SDK changes this structure, update this path together with the primary
-    # `output_text` handling instead of assuming Chat Completions-style fields.
+    # This targets the current OpenAI Python 1.x Responses API shape documented in the
+    # OpenAI API reference and README: prefer the SDK convenience field `output_text`,
+    # then fall back to iterating `response.output[*].content[*].text` when the helper is
+    # absent or empty. If the SDK changes this object shape, update both branches together
+    # instead of switching to Chat Completions-style parsing.
     parts: list[str] = []
     for item in getattr(response, "output", []) or []:
         for content in getattr(item, "content", []) or []:
@@ -184,16 +186,39 @@ def extract_json_object(raw_text: str) -> dict[str, Any]:
     try:
         return json.loads(text)
     except json.JSONDecodeError:
-        match = re.search(r"\{.*\}", text, flags=re.DOTALL)
-        if not match:
-            raise ReviewError("Reviewer output did not contain a JSON object.")
-        try:
-            return json.loads(match.group(0))
-        except json.JSONDecodeError as exc:
-            raise ReviewError("Reviewer output was not valid JSON.") from exc
+        decoder = json.JSONDecoder()
+        for index, char in enumerate(text):
+            if char != "{":
+                continue
+            try:
+                value, _ = decoder.raw_decode(text[index:])
+            except json.JSONDecodeError:
+                continue
+            if isinstance(value, dict):
+                return value
+        raise ReviewError("Reviewer output did not contain a valid JSON object.")
+
+
+def run_inline_assertions() -> None:
+    sample = {
+        "verdict": "APPROVE",
+        "summary": "Empty diff — nothing to review",
+        "issues": [],
+        "reviewer_model": "claude-sonnet-4-6",
+    }
+    encoded = json.dumps(sample)
+    fenced = f"```json\n{encoded}\n```"
+    wrapped = f"Reviewer output follows:\n{encoded}\nThanks."
+
+    assert extract_json_object(encoded)["verdict"] == "APPROVE"
+    assert extract_json_object(fenced)["summary"] == "Empty diff — nothing to review"
+    assert extract_json_object(wrapped)["reviewer_model"] == "claude-sonnet-4-6"
 
 
 def validate_review(review: dict[str, Any], actual_model: str) -> dict[str, Any]:
+    if not isinstance(review, dict):
+        raise ReviewError("Review payload must be an object.")
+
     verdict = review.get("verdict")
     if verdict not in VALID_VERDICTS:
         raise ReviewError(f"Invalid verdict: {verdict!r}")
@@ -233,7 +258,7 @@ def validate_review(review: dict[str, Any], actual_model: str) -> dict[str, Any]
         "verdict": verdict,
         "summary": summary.strip(),
         "issues": normalized_issues,
-        "reviewer_model": actual_model,
+        "reviewer_model": actual_model.strip() if isinstance(actual_model, str) and actual_model.strip() else "unknown",
     }
 
 
@@ -251,11 +276,22 @@ def repo_root() -> Path:
 
 
 def write_review_file(review: dict[str, Any]) -> Path:
-    runs_dir = repo_root() / ".agent-runs"
-    runs_dir.mkdir(parents=True, exist_ok=True)
-    output_path = runs_dir / "last-review.json"
-    output_path.write_text(json.dumps(review, indent=2) + "\n", encoding="utf-8")
-    return output_path
+    candidates = [
+        repo_root() / ".agent-runs",
+        Path.cwd() / ".agent-runs",
+        Path(tempfile.gettempdir()) / "foreman-agent-runs",
+    ]
+
+    for runs_dir in candidates:
+        try:
+            runs_dir.mkdir(parents=True, exist_ok=True)
+            output_path = runs_dir / "last-review.json"
+            output_path.write_text(json.dumps(review, indent=2) + "\n", encoding="utf-8")
+            return output_path
+        except OSError:
+            continue
+
+    return Path("<review-json-not-written>")
 
 
 def print_review(review: dict[str, Any], output_path: Path) -> None:
@@ -282,18 +318,20 @@ def empty_diff_review(reviewer_model: str) -> dict[str, Any]:
 
 def main() -> int:
     args = parse_args()
-    diff_text = read_diff(args.diff_source)
-    provider, reviewer_model = resolve_reviewer(args.author_model)
-
-    if not diff_text.strip():
-        review = empty_diff_review(reviewer_model)
-        output_path = write_review_file(review)
-        print_review(review, output_path)
-        return 0
-
-    prompt = build_prompt(diff_text, args.author_model, args.branch)
 
     try:
+        run_inline_assertions()
+        diff_text = read_diff(args.diff_source)
+        provider, reviewer_model = resolve_reviewer(args.author_model)
+
+        if not diff_text.strip():
+            review = empty_diff_review(reviewer_model)
+            output_path = write_review_file(review)
+            print_review(review, output_path)
+            return 0
+
+        prompt = build_prompt(diff_text, args.author_model, args.branch)
+
         if provider == "openai":
             raw_output, actual_model = call_openai(prompt, reviewer_model)
         else:

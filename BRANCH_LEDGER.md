@@ -12,6 +12,7 @@ Update this file when you open a branch (set status `open`) and when you close i
 
 | Branch | Agent | Date | Task | Merge Condition | Thread | Status | Notes |
 |--------|-------|------|------|-----------------|--------|--------|-------|
+| `agent/codex/2026-04-10/phase2-reviewer` | codex-gpt-5 | 2026-04-11 | Full audit and remediation pass across hooks, scripts, workflow, and docs after the Phase 2 / 2.1 rollout | Hook/script/docs drift fixed, audit evidence recorded in `todo.md`, syntax checks pass, and branch is pushed | codex-desktop-2026-04-11 | open | Reusing the retained Phase 2 branch for the 2026-04-11 audit/remediation pass before the branch is finally merged or replaced |
 
 ---
 

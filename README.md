@@ -101,7 +101,8 @@ Reviewed-By: codex-5.3
 ```
 
 The `commit-msg` hook enforces `Agent`, `Thread`, `Task`, and `Verified-By`.
-`Reviewed-By` is not hard-blocked in Phase 1 but warns when missing or set to `none-yet`.
+`Reviewed-By` is warning-only in Phase 2, and Phase 2.1 is the decision point for whether
+that should become stricter later.
 
 To bypass in a genuine emergency: `git commit --no-verify` (document why in DECISIONS.md).
 
@@ -120,10 +121,11 @@ agent/<tool>/<YYYY-MM-DD>/<slug>
 | `review/claude-of-codex/2026-04-09/add-stripe-webhooks` | Claude reviewing Codex's stripe branch |
 
 The `pre-push` hook blocks direct pushes to `main`, `master`, `production`, and `prod`.
+It also warns on non-compliant branch names by default; `FOREMAN_STRICT_BRANCH=1` makes that blocking.
 
 ---
 
-## Model Routing (Phase 2 default guide)
+## Model Routing (Phase 2.1 guide)
 
 | Task type | Model | Reasoning level |
 |-----------|-------|-----------------|
@@ -131,8 +133,8 @@ The `pre-push` hook blocks direct pushes to `main`, `master`, `production`, and 
 | Architecture, hard debugging, ambiguous requirements | Opus 4.6 | high |
 | Reviewing another model's output | **Different model than author** | medium |
 
-Phase 2 skips the Haiku classifier for now and defaults real implementation work to Sonnet.
-The reviewer must always be a different model than the one that wrote the code.
+Phase 2.1 keeps Sonnet as the default implementation tier, adds an optional Haiku classifier
+for dispatch routing, and still requires the reviewer to be a different model than the author.
 
 ---
 
@@ -155,9 +157,9 @@ This closes the known cloud-agent bypass gap for trailer enforcement even though
 hooks are still the main authoring-time safety net. See `DECISIONS.md` for the Phase 1.5
 resolution.
 
-**Long-term:** Phase 3 Dagger Container Use gives every agent an isolated local
-worktree where hooks DO fire. Phase 4 OpenClaw orchestration adds a supervisor layer
-that enforces conventions before any agent touches the repo.
+**Long-term:** Phase 3 remains container/sandbox isolation, but the exact backend is
+deferred pending the OpenHands evaluation. Phase 4-style orchestration is likewise contingent
+on what that evaluation proves unnecessary.
 
 **Recommendation:** For foreman-governed work, still prefer CLI agents (Claude Code,
 Codex CLI) over cloud-sandbox GUIs because the local hook path and reviewer flow remain
@@ -186,9 +188,14 @@ overbuilding before you understand your actual failure modes.
 - Closes the cloud-agent bypass gap without requiring Phase 2 infrastructure
 
 **Phase 2 — Cross-model reviewer script** ✅ *implemented as a soft gate*
-- `scripts/foreman-review.py` sends `git diff main...HEAD` to a different model than the author and requires a strict JSON verdict schema
+- `scripts/foreman-review.py` reviews a diff against `main...HEAD`, with fallback to `origin/main...HEAD`, and requires a strict JSON verdict schema
 - `hooks/pre-push` now prints the reviewer verdict on every non-empty diff after the normal test/lint/build gates run
-- `BLOCKER` is advisory only in Phase 2; the push still proceeds while verdict quality is validated in real use
+- `BLOCKER` is advisory by default; `FOREMAN_HARD_GATE=1` promotes it to a hard gate while verdict quality is validated in real use
+
+**Phase 2.1 — Routing + rollout controls** ✅ *partially implemented*
+- `scripts/foreman-classify.py` adds an optional Haiku classifier for dispatch routing
+- `hooks/pre-push` now warns on non-compliant branch names by default; `FOREMAN_STRICT_BRANCH=1` makes that blocking
+- live API-path validation and any default promotion decisions remain open follow-up work
 
 **Phase 3 — Dagger Container Use** *(after Phase 2 is stable)*
 - Each agent gets its own isolated container + git worktree

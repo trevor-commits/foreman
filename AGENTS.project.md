@@ -69,7 +69,7 @@ Verified-By: pytest, ruff, mypy
 Reviewed-By: claude-sonnet-4-6
 ```
 
-In Phase 2, when automated review runs, `Reviewed-By:` should be populated with the exact
+Now that Phase 2 automated review runs from `hooks/pre-push`, `Reviewed-By:` should be populated with the exact
 `reviewer_model` value returned by `scripts/foreman-review.py` in `.agent-runs/last-review.json`
 instead of being left as `none-yet`.
 
@@ -83,7 +83,7 @@ instead of being left as `none-yet`.
 
 ⚠️ **Cloud agent bypass:** The `commit-msg` hook only fires when git runs on the local machine.
 Agents that commit from a remote cloud sandbox (confirmed: Codex Mac app) bypass it entirely.
-Server-side enforcement via GitHub Actions is the planned Phase 1.5 fix.
+Server-side enforcement via GitHub Actions is the implemented Phase 1.5 mitigation.
 
 To bypass in a genuine emergency: `git commit --no-verify` (document why in DECISIONS.md).
 
@@ -127,7 +127,7 @@ Template:
 
 ## 5. Model Routing Guide
 
-Phase 2 routing policy:
+Phase 2.1 routing policy:
 
 | Task type | Model | Reasoning level |
 |-----------|-------|-----------------|
@@ -246,8 +246,8 @@ it in a committed file or in the commit trailer schema instead of relying on
 
 Run `hooks/install.sh` once after cloning this template into a new project.
 
-- `commit-msg` — hard-rejects commits missing `Agent`, `Thread`, `Task`, `Verified-By`; warns on missing/none-yet `Reviewed-By`; skips merge commits, squash!, fixup!, WIP, and wip
-- `pre-push` — heuristic gate: warns on non-compliant branch names by default (`FOREMAN_STRICT_BRANCH=1` makes that blocking), autodetects Python (pytest, ruff, optional mypy), Node (npm test/lint/build), or Makefile; reports all results; blocks on any failure; blocks direct push to `main`, `master`, `production`, `prod`
+- `commit-msg` — hard-rejects commits missing `Agent`, `Thread`, `Task`, `Verified-By`; warns on missing/none-yet `Reviewed-By`; skips merge commits, `fixup!`, `squash!`, `WIP`, and `wip` based on the commit subject
+- `pre-push` — heuristic gate: warns on non-compliant branch names by default (`FOREMAN_STRICT_BRANCH=1` makes that blocking), autodetects Python (pytest, ruff, optional mypy), Node (npm test/lint/build), or Makefile; reports all results; blocks on any failure; blocks direct push to `main`, `master`, `production`, `prod`; then runs the Phase 2 reviewer as a soft gate (`FOREMAN_HARD_GATE=1` makes `BLOCKER` verdicts blocking) using `main...HEAD` with fallback to `origin/main...HEAD`
 
 Note: both hooks are **local only**. They do not fire for agents that commit from a remote sandbox.
 

@@ -141,7 +141,7 @@ roadmap prose."
 foreman-compliant branch name, creates the branch when it can, and warns if the local
 `commit-msg` hook is missing. Phase 2 now extends that scaffold by printing the exact
 post-run reviewer invocation the agent should run locally after producing a diff:
-`git diff main...HEAD | python3 scripts/foreman-review.py --author-model <resolved-model> --branch <branch-name> -`.
+`git diff <main-or-origin/main>...HEAD | python3 scripts/foreman-review.py --author-model <resolved-model> --branch <branch-name> -`.
 The reviewer itself is wired into `hooks/pre-push`, so the dispatcher remains informational
 instead of becoming a second execution path.
 

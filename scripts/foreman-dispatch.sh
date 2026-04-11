@@ -6,6 +6,9 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEFAULT_REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 usage() {
   echo "Usage: $0 [--no-classify] <brief.md path>" >&2
 }
@@ -45,9 +48,23 @@ fi
 extract_field() {
   local field="$1"
   sed -nE \
-    -e "s/^\\*\\*${field}:\\*\\*[[:space:]]*//Ip" \
-    -e "s/^${field}:[[:space:]]*//Ip" \
+    -e "s/^[[:space:]]*\\*\\*${field}:\\*\\*[[:space:]]*//Ip" \
+    -e "s/^[[:space:]]*${field}:[[:space:]]*//Ip" \
     "$BRIEF_PATH" | head -1
+}
+
+resolve_review_base_ref() {
+  if git show-ref --verify --quiet "refs/heads/main"; then
+    printf '%s\n' "main"
+    return 0
+  fi
+
+  if git show-ref --verify --quiet "refs/remotes/origin/main"; then
+    printf '%s\n' "origin/main"
+    return 0
+  fi
+
+  return 1
 }
 
 MODEL_RAW="$(extract_field "Model" || true)"
@@ -95,14 +112,10 @@ CLASSIFY_RESULT=""
 if [[ "$CLASSIFY_ENABLED" -eq 0 ]]; then
   echo "Classifier: skipped (--no-classify)"
 elif [[ -f "$BRIEF_PATH" ]] && command -v python3 >/dev/null 2>&1; then
-  if python3 -c "import anthropic" >/dev/null 2>&1; then
-    CLASSIFY_RESULT="$(
-      python3 scripts/foreman-classify.py "$BRIEF_PATH" 2>/dev/null || \
-        echo '{"route":"standard","confidence":0,"reason":"classifier failed","escalation_triggers":[]}'
-    )"
-  else
-    CLASSIFY_RESULT='{"route":"standard","confidence":0,"reason":"classifier unavailable - defaulting to standard","escalation_triggers":[]}'
-  fi
+  CLASSIFY_RESULT="$(
+    python3 "$SCRIPT_DIR/foreman-classify.py" "$BRIEF_PATH" 2>/dev/null || \
+      echo '{"route":"standard","confidence":0,"reason":"classifier failed","escalation_triggers":[]}'
+  )"
 else
   CLASSIFY_RESULT='{"route":"standard","confidence":0,"reason":"classifier unavailable - defaulting to standard","escalation_triggers":[]}'
 fi
@@ -146,6 +159,9 @@ echo "Resolved reasoning level: ${REASONING_NORMALIZED}"
 echo "Proposed branch: ${BRANCH_NAME}"
 
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  REPO_ROOT="$(git rev-parse --show-toplevel)"
+  REVIEWER_SCRIPT="$REPO_ROOT/scripts/foreman-review.py"
+  REVIEW_BASE_REF="$(resolve_review_base_ref || true)"
   if git show-ref --verify --quiet "refs/heads/${BRANCH_NAME}"; then
     if git checkout "${BRANCH_NAME}" >/dev/null 2>&1; then
       echo "Checked out existing branch: ${BRANCH_NAME}"
@@ -167,10 +183,17 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     echo "WARNING: commit-msg hook is missing or not executable at ${HOOK_PATH}"
   fi
 else
+  REPO_ROOT="$DEFAULT_REPO_ROOT"
+  REVIEWER_SCRIPT="$REPO_ROOT/scripts/foreman-review.py"
+  REVIEW_BASE_REF=""
   echo "Not inside a git work tree. Run: git checkout -b ${BRANCH_NAME}"
   echo "WARNING: unable to verify .git/hooks/commit-msg outside a git work tree"
 fi
 
 echo ""
 echo "Next step after completing your work:"
-echo "  git diff main...HEAD | python3 scripts/foreman-review.py --author-model ${MODEL_TIER} --branch ${BRANCH_NAME} -"
+if [[ -n "$REVIEW_BASE_REF" ]]; then
+  echo "  git diff ${REVIEW_BASE_REF}...HEAD | python3 \"$REVIEWER_SCRIPT\" --author-model ${MODEL_TIER} --branch ${BRANCH_NAME} -"
+else
+  echo "  if git show-ref --verify --quiet refs/heads/main; then BASE_REF=main; elif git show-ref --verify --quiet refs/remotes/origin/main; then BASE_REF=origin/main; else echo 'Missing main and origin/main'; exit 1; fi; git diff \"\${BASE_REF}\"...HEAD | python3 \"$REVIEWER_SCRIPT\" --author-model ${MODEL_TIER} --branch ${BRANCH_NAME} -"
+fi

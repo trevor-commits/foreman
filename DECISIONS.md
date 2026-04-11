@@ -16,6 +16,19 @@ Entry format:
 
 ---
 
+## 2026-04-11 — Reviewer Hook Defers Provider Detection To `foreman-review.py`
+
+**Decision:** The `pre-push` hook now resolves its diff base from explicit refs (`refs/heads/main`, then `refs/remotes/origin/main`) and always hands the diff to `scripts/foreman-review.py` when `python3` and the script itself are available. The shell hook no longer pre-checks for the `anthropic` package.
+
+**Why:** The review script already owns provider routing and dependency/key fallback. Keeping a second provider-specific dependency check in shell created drift: valid OpenAI review paths and Anthropic-fallback paths could be skipped before the Python logic ever ran. Explicit local-vs-remote main resolution also fixes fresh-clone repos that only have `origin/main`, where ambiguous abbreviated ref resolution could say `main` existed even though `git diff main...HEAD` still failed.
+
+**Alternatives Considered:** Keep the shell-level Anthropic pre-check (rejected: duplicates provider logic and skips valid review paths). Require a local `main` branch for review (rejected: breaks fresh clones and retained-branch workflows unnecessarily). Teach the hook both provider SDKs in shell (rejected: pushes application logic back into the least suitable layer).
+
+**Agent:** codex-gpt-5
+**Context:** 2026-04-11 full audit and remediation pass
+
+---
+
 ## 2026-04-11 — MCP Tool Surface Is Scaffolded As A Shim
 
 **Decision:** Added `docs/mcp-tools.md` and `scripts/foreman-mcp-shim.py` to define and exercise the planned foreman MCP tool surface. Full MCP server implementation is deferred until OpenHands evaluation confirms the backend choice.

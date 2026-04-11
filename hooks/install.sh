@@ -4,7 +4,7 @@
 # Installs foreman git hooks into the current repo's .git/hooks/ directory.
 # Run this once after cloning a repo that uses the foreman template.
 #
-# Usage (from your repo root):
+# Usage (from anywhere inside your repo):
 #   bash hooks/install.sh
 #
 # What it does:
@@ -61,8 +61,10 @@ echo ""
 echo "    commit-msg  Enforces the trailer schema on every commit"
 echo "                (Agent, Thread, Task, Verified-By)"
 echo ""
-echo "    pre-push    Runs tests/lint/build before any push"
-echo "                Blocks direct pushes to main/master"
+echo "    pre-push    Runs tests/lint/build before any push, warns on"
+echo "                non-compliant branch names, and runs the reviewer"
+echo "                soft gate. Blocks direct pushes to main/master/"
+echo "                production/prod."
 echo ""
 echo "    Both hooks can be bypassed with --no-verify in genuine emergencies."
 echo "    See AGENTS.md for the full conventions."
