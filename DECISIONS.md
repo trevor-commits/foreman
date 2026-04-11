@@ -16,6 +16,21 @@ Entry format:
 
 ---
 
+## 2026-04-10 — OpenHands and MCP as Candidate Replacements for Phases 3–4
+
+**Decision:** Defer a final architecture decision on Phases 3 (Dagger container isolation) and 4 (OpenClaw orchestration), pending evaluation of OpenHands as a combined replacement for both. MCP tool wrapping is identified as the preferred long-term interface boundary regardless of which execution backend wins.
+
+**Why:** Bible AI's post-launch architecture session (2026-04-10, captured in `bible-brain-vision.md`) identified OpenHands (formerly OpenDevin) as a sandboxed autonomous coding agent that already provides what Phases 3 and 4 are intended to provide separately: isolated execution environments, iterative code runs, and MCP tool support. Rather than building Dagger container isolation and then an OpenClaw orchestration layer on top of it, OpenHands may satisfy both requirements in one framework. Evaluating it before committing to the Phase 3/4 build avoids over-engineering.
+
+The MCP-as-boundary pattern applies directly to foreman: repo governance operations (branch ledger queries, trailer validation, review dispatch) should eventually be exposed as MCP tools so any agent backend — OpenHands, Codex CLI, Claude Code — interacts through a uniform interface rather than foreman-specific shell scripts.
+
+**Alternatives Considered:** Proceeding with Dagger (Phase 3) as planned (deferred: evaluate OpenHands first since it may make Dagger unnecessary). Adopting OpenHands immediately (rejected: need to validate it fits the foreman governance model before committing). Skipping both phases entirely (rejected: sandboxed execution is still the right long-term goal; the question is how to get there).
+
+**Agent:** claude-sonnet-4-6
+**Context:** 2026-04-10 cross-project architecture review
+
+---
+
 ## 2026-04-10 — Phase 2 Reviewer Uses Python, Not Shell
 
 **Decision:** The Phase 2 automated reviewer is implemented as `scripts/foreman-review.py`
