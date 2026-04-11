@@ -35,15 +35,15 @@ Each active branch entry should include:
 - `exit checklist`
 - `delete when` or `retain after close`
 - `retain reason` when not deleting
-- branch: `agent/codex/2026-04-11/enrich-reviewer-prompt`
-  source chat: 2026-04-11 "rewrite build_prompt() to inject the full foreman governance context"
-  last refreshed by chat: 2026-04-11 "add GitHub Actions CI workflow for foreman test suite"
-  purpose: align the reviewer governance prompt, add persistent review telemetry and calibration, close the `Reviewed-By` workflow gap, wire branch lifecycle automation into dispatch/close flows, add operator-facing status and merge-readiness commands, harden `hooks/pre-push` with branch-wide author detection plus local trailer validation, and add hosted CI coverage for the foreman tooling test suite
-  merge expectation: merge after `bash -n hooks/pre-push`, `bash scripts/test-hooks.sh`, `bash -n scripts/foreman-dispatch.sh`, `bash -n scripts/foreman-close.sh`, `bash -n scripts/foreman-status.sh`, `bash -n scripts/foreman-merge-check.sh`, `python3 -c "import yaml; yaml.safe_load(open('.github/workflows/test-foreman-tooling.yml'))"`, the empty-diff manual hook check, `python3 -m py_compile scripts/foreman-calibration.py`, and `python3 scripts/test-review.py` pass and the branch receives a second-model review with a compliant `Reviewed-By` trailer
-  exit checklist: keep `hooks/pre-push`, `AGENTS.project.md`, `CLAUDE.md`, `.github/PULL_REQUEST_TEMPLATE.md`, `.github/workflows/test-foreman-tooling.yml`, `scripts/foreman-review.py`, `scripts/foreman-calibration.py`, `scripts/foreman-dispatch.sh`, `scripts/foreman-close.sh`, `scripts/foreman-status.sh`, `scripts/foreman-merge-check.sh`, `scripts/README.md`, `scripts/requirements.txt`, `scripts/test-review.py`, and `scripts/test-hooks.sh` aligned, keep the branch ledger row open until review is complete, then mark the branch ready/merged
-  delete when: after merge to `main`
+- None currently.
 
 ## Branch History
+- branch: `agent/codex/2026-04-11/enrich-reviewer-prompt`
+  source chat: 2026-04-11 "rewrite build_prompt() to inject the full foreman governance context"
+  last refreshed by chat: 2026-04-11 "At this point merge/delete all branches and commit all uncommitted work in order to do so if there is any"
+  purpose: align the reviewer governance prompt, add persistent review telemetry and calibration, close the `Reviewed-By` workflow gap, wire branch lifecycle automation into dispatch/close flows, add operator-facing status and merge-readiness commands, harden `hooks/pre-push` with branch-wide author detection plus local trailer validation, and add hosted CI coverage for the foreman tooling test suite
+  outcome: merged to `main` on 2026-04-11 after landing the governance-prompt rewrite, telemetry and calibration tooling, the Reviewed-By auto-amend flow, dispatch and close lifecycle scripts, operator-facing status and merge-readiness commands, branch-wide pre-push author detection and trailer validation, and the hosted foreman tooling test workflow
+  cleanup status: branch deleted locally and on `origin` after merge
 - branch: `agent/codex/2026-04-09/phase15-governance`
   source chat: 2026-04-09 "Work through Task 0-4 across foreman, Taxes, and bible-ai"
   last refreshed by chat: same chat
