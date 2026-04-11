@@ -33,13 +33,7 @@ Each active branch entry should include:
 - `exit checklist`
 - `delete when` or `retain after close`
 - `retain reason` when not deleting
-- branch: `agent/codex/2026-04-11/live-validation-sync`
-  source chat: 2026-04-11 "Phase 2.1 live validation, downstream sync, and GitHub Actions review"
-  last refreshed by chat: same chat
-  purpose: install the live reviewer SDKs, run the live classifier/reviewer validation paths, and sync any newer governance assets into downstream repos
-  merge expectation: live validation evidence is recorded in `todo.md`, the workflow review is complete, downstream sync branches are pushed, and this branch is ready for review
-  exit checklist: install `anthropic`/`openai`; run live classifier and reviewer checks; update `CLAUDE.md` and `todo.md`; sync downstream repos; commit; push
-  delete when: after this branch is merged to `main`
+- None currently.
 
 ## Branch History
 - branch: `agent/codex/2026-04-09/phase15-governance`
@@ -118,6 +112,10 @@ Each active branch entry should include:
 - When a verification run closes or updates an audit finding, cross-reference the matching audit record entry and the chat or commit that performed the work.
 
 ## Test Evidence Log
+- date: 2026-04-11
+  command(s): `sed -n '1,220p' /Users/gillettes/Coding Projects/bible-ai/.github/workflows/foreman-trailer-check.yml`; `test -f /Users/gillettes/Coding Projects/bible-ai/scripts/ci/verify-foreman-trailers.sh`
+  result: pass — `bible-ai` trailer workflow delegates to `./scripts/ci/verify-foreman-trailers.sh`, and that script exists; no workflow hotfix was needed
+  log/PR reference: local downstream workflow audit from `foreman/main`
 - date: 2026-04-11
   command(s): `pip3 install anthropic openai --break-system-packages`; `python3 -c "import anthropic; print('anthropic', anthropic.__version__)"`; `python3 -c "import openai; print('openai', openai.__version__)"`
   result: pass — installed `anthropic 0.94.0` and `openai 2.31.0` into Python 3.14.4; live reviewer/classifier calls are now executable in this shell

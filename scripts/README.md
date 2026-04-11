@@ -15,3 +15,21 @@ Environment variables:
 
 If `OPENAI_API_KEY` is missing when the author model is Claude, `foreman-review.py`
 falls back to a second Claude model instead of failing immediately.
+
+## Live Validation Setup
+
+The reviewer and classifier require Anthropic and OpenAI SDKs. Install once per environment:
+
+```bash
+pip3 install -r scripts/requirements.txt --break-system-packages
+```
+
+Or in a virtualenv:
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate && pip install -r scripts/requirements.txt
+```
+
+Required env vars:
+- `ANTHROPIC_API_KEY` — for reviewer (Claude-authored diffs) and Haiku classifier
+- `OPENAI_API_KEY` — for reviewer (Codex/GPT-authored diffs); optional if Anthropic-only setup
