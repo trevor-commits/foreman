@@ -13,14 +13,18 @@ from pathlib import Path
 from typing import Any
 
 
+# Keep Anthropic model identifiers aligned with the canonical routing names in CLAUDE.md.
 OPENAI_REVIEW_MODEL = "o4-mini"
-CLAUDE_REVIEW_MODEL = os.getenv("FOREMAN_ANTHROPIC_REVIEW_MODEL", "claude-sonnet-4-20250514")
+CLAUDE_HAIKU_MODEL = "claude-haiku-4-5-20251001"
+CLAUDE_SONNET_MODEL = "claude-sonnet-4-6"
+CLAUDE_OPUS_MODEL = "claude-opus-4-6"
+CLAUDE_REVIEW_MODEL = os.getenv("FOREMAN_ANTHROPIC_REVIEW_MODEL", CLAUDE_SONNET_MODEL)
 # If a Claude-authored diff needs review but OPENAI_API_KEY is not configured, fall back to
 # a second Claude model rather than skipping immediately. This keeps cross-model review
 # working in Anthropic-only setups until the OpenAI path is validated more broadly.
 CLAUDE_FALLBACK_MODEL = os.getenv(
     "FOREMAN_ANTHROPIC_FALLBACK_MODEL",
-    "claude-haiku-4-5-20251001",
+    CLAUDE_HAIKU_MODEL,
 )
 VALID_VERDICTS = {"APPROVE", "REQUEST_CHANGES", "BLOCKER"}
 VALID_SEVERITIES = {"info", "warning", "blocking"}
@@ -131,6 +135,10 @@ def call_openai(prompt: str, model: str) -> tuple[str, str]:
     if output_text:
         return output_text, getattr(response, "model", model)
 
+    # This fallback targets the OpenAI Responses API object shape used by `client.responses.create`
+    # in the current SDK, where text can arrive under `response.output[*].content[*].text`.
+    # If the SDK changes this structure, update this path together with the primary
+    # `output_text` handling instead of assuming Chat Completions-style fields.
     parts: list[str] = []
     for item in getattr(response, "output", []) or []:
         for content in getattr(item, "content", []) or []:

@@ -82,6 +82,7 @@ Each active branch entry should include:
 | Trigger | Command(s) | Cadence | Gate Criteria |
 |---|---|---|---|
 | Hook or branch-policy changes | `bash hooks/pre-push origin` | Before every push from a feature branch | Exits `0`; no gate failures; reviewer may skip only for missing keys/dependencies or empty diff |
+| Pre-push reviewer smoke coverage | `bash scripts/test-review.sh` | Every push | Must pass |
 | Dispatcher script changes | `bash -n scripts/foreman-dispatch.sh` | Before commit and before push when `scripts/foreman-dispatch.sh` changes | Exits `0`; no shell syntax errors |
 | Reviewer script changes | `python3 -c "import runpy; runpy.run_path('scripts/foreman-review.py', run_name='foreman_review')"` | Before commit and before push when `scripts/foreman-review.py` changes | Exits `0`; file loads without syntax or import-time failure |
 | Trailer enforcement validation | `git push origin <branch>` | Every PR or push that is intended to validate `.github/workflows/foreman-trailer-check.yml` | Hosted `Foreman Trailer Check` workflow passes on GitHub Actions |
