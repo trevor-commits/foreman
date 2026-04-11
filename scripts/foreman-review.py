@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 import json
 import os
 import re
@@ -298,14 +299,25 @@ def repo_root() -> Path:
         return Path.cwd()
 
 
-def write_review_file(review: dict[str, Any]) -> Path:
+def review_runs_directories() -> list[Path]:
     candidates = [
         repo_root() / ".agent-runs",
         Path.cwd() / ".agent-runs",
         Path(tempfile.gettempdir()) / "foreman-agent-runs",
     ]
+    unique_candidates: list[Path] = []
+    seen: set[Path] = set()
+    for candidate in candidates:
+        resolved = candidate.resolve(strict=False)
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        unique_candidates.append(candidate)
+    return unique_candidates
 
-    for runs_dir in candidates:
+
+def write_review_file(review: dict[str, Any]) -> Path:
+    for runs_dir in review_runs_directories():
         try:
             runs_dir.mkdir(parents=True, exist_ok=True)
             output_path = runs_dir / "last-review.json"
@@ -315,6 +327,53 @@ def write_review_file(review: dict[str, Any]) -> Path:
             continue
 
     return Path("<review-json-not-written>")
+
+
+def append_telemetry(
+    review: dict[str, Any],
+    author_model: str,
+    branch: str,
+    provider: str,
+    diff_text: str,
+) -> Path | None:
+    severity_counts = {"blocking": 0, "warning": 0, "info": 0}
+    for issue in review.get("issues", []):
+        severity = issue.get("severity")
+        if severity in severity_counts:
+            severity_counts[severity] += 1
+
+    record = {
+        "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "branch": branch,
+        "author_model": author_model,
+        "reviewer_model": review.get("reviewer_model", "unknown"),
+        "provider": provider,
+        "verdict": review.get("verdict", "unknown"),
+        "issue_count": len(review.get("issues", [])),
+        "blocking_count": severity_counts["blocking"],
+        "warning_count": severity_counts["warning"],
+        "info_count": severity_counts["info"],
+        "summary": review.get("summary", ""),
+        "diff_line_count": len(diff_text.splitlines()),
+    }
+
+    last_error: OSError | None = None
+    for runs_dir in review_runs_directories():
+        try:
+            runs_dir.mkdir(parents=True, exist_ok=True)
+            output_path = runs_dir / "review-log.jsonl"
+            with output_path.open("a", encoding="utf-8") as handle:
+                handle.write(json.dumps(record) + "\n")
+            return output_path
+        except OSError as exc:
+            last_error = exc
+            continue
+
+    if last_error is not None:
+        print(f"Reviewer telemetry warning: {last_error}", file=sys.stderr)
+    else:
+        print("Reviewer telemetry warning: unable to write review-log.jsonl", file=sys.stderr)
+    return None
 
 
 def print_review(review: dict[str, Any], output_path: Path) -> None:
@@ -362,6 +421,7 @@ def main() -> int:
 
         review = validate_review(extract_json_object(raw_output), actual_model)
         output_path = write_review_file(review)
+        append_telemetry(review, args.author_model, args.branch, provider, diff_text)
         print_review(review, output_path)
         return 1 if review["verdict"] == "BLOCKER" else 0
     except MissingKeyError as exc:

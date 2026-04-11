@@ -3,6 +3,7 @@
 ## Active Next Steps
 Capture the current goal plus the concrete dependency-ordered steps that are still open.
 - [Phase 2.1] Continue the reviewer `BLOCKER` burn-in and decide whether the default should flip to a hard gate after 2026-04-24.
+- [Phase 2.1] Run `python3 scripts/foreman-calibration.py --days 14` on 2026-04-24 to evaluate `BLOCKER` accuracy before promoting `FOREMAN_HARD_GATE=1`.
 - [Phase 2.1] Validate trailer-check GitHub Actions workflow from a real hosted runner, not local syntax check only.
 - [Phase 2.1] Push a test PR with a correctly-tagged commit to confirm `foreman-trailer-check.yml` passes on GitHub's hosted runner, then push a PR with a missing-trailer commit and confirm it fails.
 - [Phase 2.1] Decide whether commit-time `Reviewed-By` should remain warning-only or follow the Phase 2.1 hard-gate promotion path.
@@ -35,10 +36,10 @@ Each active branch entry should include:
 - `retain reason` when not deleting
 - branch: `agent/codex/2026-04-11/enrich-reviewer-prompt`
   source chat: 2026-04-11 "rewrite build_prompt() to inject the full foreman governance context"
-  last refreshed by chat: same chat
-  purpose: align the automated reviewer prompt with foreman's actual trailer, branch, and merge governance rules and extend the local validation coverage
-  merge expectation: merge after `python3 scripts/test-review.py` passes and the branch receives a second-model review with a compliant `Reviewed-By` trailer
-  exit checklist: keep `scripts/foreman-review.py` and `scripts/test-review.py` aligned, keep the branch ledger row open until review is complete, then mark the branch ready/merged
+  last refreshed by chat: 2026-04-11 "add reviewer telemetry log and calibration script for hard-gate promotion decision"
+  purpose: align the reviewer governance prompt, add persistent review telemetry, and add the burn-in calibration script and docs needed for the 2026-04-24 hard-gate decision
+  merge expectation: merge after `python3 -m py_compile scripts/foreman-calibration.py` and `python3 scripts/test-review.py` pass and the branch receives a second-model review with a compliant `Reviewed-By` trailer
+  exit checklist: keep `scripts/foreman-review.py`, `scripts/foreman-calibration.py`, and `scripts/test-review.py` aligned, keep the branch ledger row open until review is complete, then mark the branch ready/merged
   delete when: after merge to `main`
 
 ## Branch History
@@ -119,6 +120,10 @@ Each active branch entry should include:
 
 ## Test Evidence Log
 - date: 2026-04-11
+  command(s): `python3 -m py_compile scripts/foreman-calibration.py`; `python3 scripts/test-review.py`
+  result: pass — the new calibration script compiles, the reviewer smoke suite now covers telemetry JSONL writes, and `python3 scripts/foreman-calibration.py --days 14` correctly prints the no-telemetry bootstrap message before any real reviews are logged
+  log/PR reference: local verification run on `agent/codex/2026-04-11/enrich-reviewer-prompt`
+- date: 2026-04-11
   command(s): `python3 scripts/test-review.py`
   result: pass — reviewer smoke tests still pass after the governance-prompt rewrite and the added validation coverage for valid `reviewer_model` handling plus missing-`note` rejection
   log/PR reference: local verification run on `agent/codex/2026-04-11/enrich-reviewer-prompt`
@@ -196,6 +201,7 @@ Each active branch entry should include:
 | Hook smoke tests | `bash scripts/test-hooks.sh` | Every push after hook changes | All tests PASS |
 | Dispatcher syntax | `bash -n scripts/foreman-dispatch.sh` | Every push | Must pass |
 | Classifier compile | `python3 -m py_compile scripts/foreman-classify.py` | Every push | Must pass |
+| Hard-gate calibration | `python3 scripts/foreman-calibration.py --days 14` | Once on 2026-04-24 (burn-in checkpoint) | READY verdict from the script |
 
 ## Feedback Decision Log
 Record outside feedback and the resulting reasoning once, then update the same entry as the decision evolves.

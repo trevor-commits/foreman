@@ -33,3 +33,9 @@ python3 -m venv .venv && source .venv/bin/activate && pip install -r scripts/req
 Required env vars:
 - `ANTHROPIC_API_KEY` — for reviewer (Claude-authored diffs) and Haiku classifier
 - `OPENAI_API_KEY` — for reviewer (Codex/GPT-authored diffs); optional if Anthropic-only setup
+
+## Telemetry And Calibration
+
+- `scripts/foreman-review.py` writes the latest review to `.agent-runs/last-review.json` and appends telemetry to `.agent-runs/review-log.jsonl`
+- `scripts/foreman-calibration.py` summarizes reviewer telemetry and prints the hard-gate readiness decision
+- Burn-in checkpoint command: `python3 scripts/foreman-calibration.py --days 14`

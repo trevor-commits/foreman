@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 
@@ -126,6 +128,48 @@ def test_validate_review_rejects_issue_missing_note() -> None:
     raise AssertionError("validate_review should raise ReviewError when issue note is missing")
 
 
+def test_append_telemetry_writes_jsonl_record() -> None:
+    review = {
+        "verdict": "REQUEST_CHANGES",
+        "summary": "Needs branch cleanup",
+        "issues": [
+            {"severity": "warning", "location": "general", "note": "Rename the branch"},
+            {"severity": "blocking", "location": "general", "note": "Do not self-review"},
+        ],
+        "reviewer_model": "claude-sonnet-4-6",
+    }
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_path = Path(tmp_dir)
+        original_repo_root = module.repo_root
+        module.repo_root = lambda: tmp_path
+        try:
+            output_path = module.append_telemetry(
+                review,
+                "codex-5.3",
+                "agent/codex/2026-04-11/test-telemetry",
+                "anthropic",
+                "line 1\nline 2\nline 3\n",
+            )
+        finally:
+            module.repo_root = original_repo_root
+
+        assert output_path == tmp_path / ".agent-runs" / "review-log.jsonl", output_path
+        payload = output_path.read_text(encoding="utf-8").strip()
+        record = json.loads(payload)
+        assert record["branch"] == "agent/codex/2026-04-11/test-telemetry", record
+        assert record["author_model"] == "codex-5.3", record
+        assert record["reviewer_model"] == "claude-sonnet-4-6", record
+        assert record["provider"] == "anthropic", record
+        assert record["verdict"] == "REQUEST_CHANGES", record
+        assert record["issue_count"] == 2, record
+        assert record["blocking_count"] == 1, record
+        assert record["warning_count"] == 1, record
+        assert record["info_count"] == 0, record
+        assert record["summary"] == "Needs branch cleanup", record
+        assert record["diff_line_count"] == 3, record
+        assert record["timestamp"].endswith("Z"), record
+
+
 def main() -> int:
     tests = [
         ("empty diff returns APPROVE without an API call", test_empty_diff_review),
@@ -137,6 +181,7 @@ def main() -> int:
         ("validate_review rejects invalid severity", test_validate_review_invalid_severity),
         ("validate_review accepts a valid review payload with reviewer_model", test_validate_review_accepts_valid_review_with_reviewer_model),
         ("validate_review rejects an issue missing note", test_validate_review_rejects_issue_missing_note),
+        ("append_telemetry writes a JSONL telemetry record", test_append_telemetry_writes_jsonl_record),
     ]
 
     for description, fn in tests:
