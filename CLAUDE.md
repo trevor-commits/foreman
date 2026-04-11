@@ -123,6 +123,7 @@ See DECISIONS.md for full history.
 - The Phase 2 reviewer is advisory only for now. A `BLOCKER` verdict is reported loudly but does not stop the push yet.
 - `FOREMAN_HARD_GATE=1` makes reviewer `BLOCKER` verdicts fail the push immediately, and `FOREMAN_STRICT_BRANCH=1` does the same for non-compliant branch names.
 - The pre-push hook resolves its review diff base from local `main` first, then `origin/main`, and skips reviewer execution only if neither ref exists, `python3` is unavailable, or the review script is missing.
+- The pre-push hook automatically amends the last commit's `Reviewed-By` trailer when the reviewer runs successfully, then stops that push so the next `git push` sends the amended SHA. If you push with `--no-verify`, `Reviewed-By` stays `none-yet`.
 - `scripts/foreman-review.py` skips live review if the required API key or SDK package is missing and writes `.agent-runs/last-review.json` whenever it can persist a review payload locally.
 - Live reviewer and classifier paths require `anthropic` and `openai` packages. Install via `pip3 install -r scripts/requirements.txt --break-system-packages`. Without them, the reviewer silently skips and the classifier defaults to `standard`.
 - Local hooks still matter, but `.github/workflows/foreman-trailer-check.yml` now covers

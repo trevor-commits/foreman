@@ -36,10 +36,10 @@ Each active branch entry should include:
 - `retain reason` when not deleting
 - branch: `agent/codex/2026-04-11/enrich-reviewer-prompt`
   source chat: 2026-04-11 "rewrite build_prompt() to inject the full foreman governance context"
-  last refreshed by chat: 2026-04-11 "add reviewer telemetry log and calibration script for hard-gate promotion decision"
-  purpose: align the reviewer governance prompt, add persistent review telemetry, and add the burn-in calibration script and docs needed for the 2026-04-24 hard-gate decision
-  merge expectation: merge after `python3 -m py_compile scripts/foreman-calibration.py` and `python3 scripts/test-review.py` pass and the branch receives a second-model review with a compliant `Reviewed-By` trailer
-  exit checklist: keep `scripts/foreman-review.py`, `scripts/foreman-calibration.py`, and `scripts/test-review.py` aligned, keep the branch ledger row open until review is complete, then mark the branch ready/merged
+  last refreshed by chat: 2026-04-11 "auto-amend Reviewed-By trailer in pre-push after reviewer runs"
+  purpose: align the reviewer governance prompt, add persistent review telemetry and calibration, and close the `Reviewed-By` workflow gap with a safe pre-push amendment flow
+  merge expectation: merge after `bash -n hooks/pre-push`, the empty-diff manual hook check, `python3 -m py_compile scripts/foreman-calibration.py`, and `python3 scripts/test-review.py` pass and the branch receives a second-model review with a compliant `Reviewed-By` trailer
+  exit checklist: keep `hooks/pre-push`, `AGENTS.project.md`, `CLAUDE.md`, `scripts/foreman-review.py`, `scripts/foreman-calibration.py`, and `scripts/test-review.py` aligned, keep the branch ledger row open until review is complete, then mark the branch ready/merged
   delete when: after merge to `main`
 
 ## Branch History
@@ -119,6 +119,10 @@ Each active branch entry should include:
 - When a verification run closes or updates an audit finding, cross-reference the matching audit record entry and the chat or commit that performed the work.
 
 ## Test Evidence Log
+- date: 2026-04-11
+  command(s): `bash -n hooks/pre-push`; `HEAD_BEFORE=$(git rev-parse HEAD); FOREMAN_REVIEW_BASE_REF=HEAD bash hooks/pre-push origin; HEAD_AFTER=$(git rev-parse HEAD)`; temp-repo push proof with a stub `scripts/foreman-review.py` to verify first push amends+stops and second push sends the amended SHA
+  result: pass — shell syntax is valid, the empty-diff manual hook run skipped review and left `HEAD` unchanged, and the temp-repo proof confirmed the safe flow: first push amends `Reviewed-By` and aborts, second push sends the amended commit
+  log/PR reference: local verification run on `agent/codex/2026-04-11/enrich-reviewer-prompt`
 - date: 2026-04-11
   command(s): `python3 -m py_compile scripts/foreman-calibration.py`; `python3 scripts/test-review.py`
   result: pass — the new calibration script compiles, the reviewer smoke suite now covers telemetry JSONL writes, and `python3 scripts/foreman-calibration.py --days 14` correctly prints the no-telemetry bootstrap message before any real reviews are logged

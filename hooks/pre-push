@@ -231,6 +231,45 @@ if [[ -n "${REVIEW_DIFF:-}" ]]; then
   printf '%s\n' "$REVIEWER_OUTPUT"
   REVIEW_OUTPUT_PATH="$(printf '%s\n' "$REVIEWER_OUTPUT" | sed -n 's/^Review JSON:[[:space:]]*//p' | tail -1)"
   REVIEW_OUTPUT_PATH="${REVIEW_OUTPUT_PATH:-$REVIEW_JSON_PATH}"
+  REVIEWED_BY_AMENDED=false
+
+  if [ "$REVIEWER_EXIT" -eq 0 ] || [ "$REVIEWER_EXIT" -eq 1 ]; then
+    REVIEWER_MODEL="$(python3 -c "
+import json, sys
+try:
+    d = json.load(open('$REVIEW_OUTPUT_PATH'))
+    print(d.get('reviewer_model', ''))
+except Exception:
+    sys.exit(1)
+" 2>/dev/null || true)"
+
+    if [[ -n "$REVIEWER_MODEL" ]]; then
+      CURRENT_REVIEWED_BY="$(git log -1 --format=%B | sed -n 's/^Reviewed-By:[[:space:]]*//p' | head -1)"
+      if [[ -z "$CURRENT_REVIEWED_BY" ]] || [[ "$CURRENT_REVIEWED_BY" == "none-yet" ]]; then
+        BRANCH_COMMIT_COUNT="$(git rev-list --count "${REVIEW_BASE_REF}"..HEAD 2>/dev/null || echo 1)"
+        if [[ "$BRANCH_COMMIT_COUNT" -gt 1 ]]; then
+          echo "ℹ️  foreman: branch has $BRANCH_COMMIT_COUNT commits — only amending Reviewed-By on the most recent commit."
+        fi
+
+        AMEND_MSG_FILE="$(mktemp)"
+        git log -1 --format=%B > "$AMEND_MSG_FILE"
+        git interpret-trailers \
+          --in-place \
+          --if-exists replace \
+          --if-missing add \
+          --trailer "Reviewed-By: $REVIEWER_MODEL" \
+          "$AMEND_MSG_FILE"
+        git commit --amend --no-edit --no-verify -F "$AMEND_MSG_FILE" >/dev/null
+        rm -f "$AMEND_MSG_FILE"
+        REVIEWED_BY_AMENDED=true
+        echo "✍️  foreman: amended commit — set Reviewed-By: $REVIEWER_MODEL"
+      else
+        echo "ℹ️  foreman: Reviewed-By already set to $CURRENT_REVIEWED_BY — not amending"
+      fi
+    else
+      echo "⚠️  foreman: unable to parse reviewer_model from $REVIEW_OUTPUT_PATH — skipping Reviewed-By amendment"
+    fi
+  fi
 
   if [ "$REVIEWER_EXIT" -eq 1 ]; then
     # Phase 2.1 hard-gate promotion: set FOREMAN_HARD_GATE=1 to block on BLOCKER verdicts.
@@ -247,6 +286,16 @@ if [[ -n "${REVIEW_DIFF:-}" ]]; then
     echo "Full review: $REVIEW_OUTPUT_PATH"
   elif [ "$REVIEWER_EXIT" -ne 0 ]; then
     echo "Reviewer: warning review script exited with status $REVIEWER_EXIT; push proceeding."
+  fi
+
+  if [[ "$REVIEWED_BY_AMENDED" == "true" ]]; then
+    # Git resolves the local source SHA for the push before running pre-push. If we amend
+    # here, this push would still send the pre-amend commit. Stop now so a rerun of
+    # `git push` sends the amended SHA with the updated Reviewed-By trailer.
+    echo "⚠️  foreman: push stopped because Reviewed-By was amended on the last commit."
+    echo "    Re-run git push to send the amended SHA."
+    echo ""
+    exit 1
   fi
 fi
 

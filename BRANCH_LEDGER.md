@@ -12,7 +12,7 @@ Update this file when you open a branch (set status `open`) and when you close i
 
 | Branch | Agent | Date | Task | Merge Condition | Thread | Status | Notes |
 |--------|-------|------|------|-----------------|--------|--------|-------|
-| `agent/codex/2026-04-11/enrich-reviewer-prompt` | codex-gpt-5 | 2026-04-11 | Enrich the reviewer prompt, add append-only telemetry, and add the calibration script needed for the 2026-04-24 hard-gate decision. | `python3 -m py_compile scripts/foreman-calibration.py` and `python3 scripts/test-review.py` pass, telemetry writes cleanly, and this branch is reviewed before merge. | `TODO: verify` | `open` | Opened from protected `main` because direct task pushes to `main` are disallowed; branch keeps the change mergeable under foreman rules while the burn-in instrumentation lands. |
+| `agent/codex/2026-04-11/enrich-reviewer-prompt` | codex-gpt-5 | 2026-04-11 | Enrich the reviewer prompt, add review telemetry, add the calibration script, and auto-amend `Reviewed-By` safely from `pre-push`. | `bash -n hooks/pre-push` passes, the empty-diff manual hook check leaves `HEAD` unchanged, and this branch is reviewed before merge. | `TODO: verify` | `open` | Opened from protected `main` because direct task pushes to `main` are disallowed; branch keeps the governance-hook changes isolated while the burn-in instrumentation and trailer flow land. |
 
 ---
 

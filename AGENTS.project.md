@@ -69,9 +69,9 @@ Verified-By: pytest, ruff, mypy
 Reviewed-By: claude-sonnet-4-6
 ```
 
-Now that Phase 2 automated review runs from `hooks/pre-push`, `Reviewed-By:` should be populated with the exact
-`reviewer_model` value returned by `scripts/foreman-review.py` in `.agent-runs/last-review.json`
-instead of being left as `none-yet`.
+Now that Phase 2 automated review runs from `hooks/pre-push`, `Reviewed-By:` is automatically
+amended to the exact `reviewer_model` value by the pre-push hook when the reviewer runs
+successfully. Manual population is still required for commits pushed with `--no-verify`.
 
 **Phase 2 enforcement detail:**
 - `commit-msg` hook **hard-rejects** commits missing `Agent`, `Thread`, `Task`, or `Verified-By`
