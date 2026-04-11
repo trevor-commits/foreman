@@ -19,6 +19,9 @@ Update this file when you open a branch (set status `open`) and when you close i
 
 | Branch | Agent | Date | Task | Outcome | Closed |
 |--------|-------|------|------|---------|--------|
+| `agent/codex/2026-04-11/branch-cleanup` | codex-gpt-5 | 2026-04-11 | Merge the retained Phase 2 reviewer branch to `main`, close the ledger, and delete merged branches | Merged the retained `agent/codex/2026-04-10/phase2-reviewer` work to `main`, closed branch records, and deleted merged branches locally and on `origin` | 2026-04-11 |
+| `agent/codex/2026-04-10/phase2-reviewer` | codex-gpt-5 | 2026-04-11 | Full audit and remediation pass across hooks, scripts, workflow, and docs after the Phase 2 / 2.1 rollout | Merged to `main` after the audit/remediation pass closed hook, script, workflow, and documentation drift with recorded verification evidence in `todo.md` | 2026-04-11 |
+| `agent/codex/2026-04-10/phase2-reviewer` | codex-gpt-5 | 2026-04-10 | Build the Phase 2 automated cross-model review path across the reviewer script, hook wiring, dispatcher note, and docs | Phase 2 reviewer implemented — soft gate active, pending Phase 2.1 hard-gate promotion. | 2026-04-11 |
 | `agent/codex/2026-04-10/cleanup-pass` | codex-gpt-5 | 2026-04-10 | Fix post-run cleanup findings, fill `PROJECT_INTENT.md`, and decide the downstream governance-doc sync strategy | Merged to `main` after documenting the bible-ai governance-only push bypass, filling `PROJECT_INTENT.md`, choosing manual downstream governance-doc mirroring, and refreshing both repos' handoff files | 2026-04-10 |
 | `agent/codex/2026-04-09/phase15-governance` | codex-gpt-5 | 2026-04-09 | Land Phase 1.5 trailer enforcement, resolve audit-trail policy, add dispatcher prototype, and sync downstream repo governance updates | Merged to `main` after landing trailer-check workflows, audit-trail decision updates, dispatcher prototype, and CLAUDE handoff refreshes across all three repos | 2026-04-09 |
 

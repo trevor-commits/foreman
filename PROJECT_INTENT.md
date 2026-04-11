@@ -16,6 +16,8 @@ When multiple AI agents work across several repos, branch purpose disappears, co
 ## In-Scope Outcomes
 - Phase 1: branch naming, commit trailers, `BRANCH_LEDGER.md`, local `commit-msg` and `pre-push` hooks, and PR metadata
 - Phase 1.5: GitHub Actions trailer enforcement on pushes and pull requests to `main`
+- Phase 2: `scripts/foreman-review.py`, reviewer wiring in `hooks/pre-push`, and reviewer-backed `Reviewed-By` guidance
+- Phase 2.1: optional classifier routing in `scripts/foreman-classify.py`, branch-name warning enforcement, and opt-in hard-gate rollout via `FOREMAN_HARD_GATE`
 - durable governance records in `AGENTS.md`, `CLAUDE.md`, `DECISIONS.md`, and repo-visible branch history
 - a shell dispatcher scaffold (`scripts/foreman-dispatch.sh`) that reads a brief, resolves model defaults, proposes a compliant branch name, and checks for installed hooks
 
@@ -23,7 +25,7 @@ When multiple AI agents work across several repos, branch purpose disappears, co
 - full orchestration, dashboards, or supervisor infrastructure before the conventions prove their value
 - treating cloud-sandbox GUI agents as a primary governed write path
 - replacing project-local implementation docs or project-specific release logic
-- shipping the Phase 2 reviewer, Phase 3 Dagger isolation, or Phase 4 OpenClaw orchestration before they are justified
+- making reviewer hard-blocking by default before the Phase 2.1 burn-in is validated, or shipping Phase 3 / Phase 4 orchestration before they are justified
 
 ## Success Metrics and Guardrails
 - Leading metrics: open branches are explainable from repo files; commits carry the required trailers; non-compliant pushes are caught locally or server-side
@@ -42,5 +44,5 @@ When multiple AI agents work across several repos, branch purpose disappears, co
 - Invalidation triggers: if the lightweight model fails to control branch/review hygiene, if manual propagation becomes too error-prone, or if real usage shows orchestration is needed sooner
 
 ## Open Questions and Decision Records
-- Open questions: Phase 2 dispatcher evolution and long-term model routing calibration remain in `OPEN_QUESTIONS.md`
+- Open questions: `Reviewed-By` hard enforcement and the eventual MCP server implementation remain in `OPEN_QUESTIONS.md`
 - Key decisions: branch ledger as source of truth, commit trailers as the durable audit trail, and Phase 1.5 server-side trailer enforcement in `DECISIONS.md`

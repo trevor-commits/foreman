@@ -16,11 +16,14 @@
 # Install: hooks/install.sh copies this to .git/hooks/commit-msg and chmod +x
 # =============================================================================
 
+set -euo pipefail
+
 COMMIT_MSG_FILE="$1"
 COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
+COMMIT_SUBJECT="$(sed -n '1p' "$COMMIT_MSG_FILE")"
 
 # ── Skip auto-generated commits ───────────────────────────────────────────────
-if echo "$COMMIT_MSG" | grep -qE "^(Merge |fixup! |squash! |WIP |wip )"; then
+if printf '%s\n' "$COMMIT_SUBJECT" | grep -qE '^(Merge |fixup! |squash! |WIP |wip )'; then
   exit 0
 fi
 
@@ -35,7 +38,7 @@ MISSING=()
 check_trailer() {
   local trailer="$1"
   # Trailers appear at the start of a line, case-insensitive, followed by a colon
-  if ! echo "$COMMIT_MSG" | grep -qiE "^${trailer}:[[:space:]]*.+"; then
+  if ! printf '%s\n' "$COMMIT_MSG" | grep -qiE "^${trailer}:[[:space:]]*.+"; then
     MISSING+=("$trailer")
   fi
 }
@@ -46,9 +49,9 @@ check_trailer "Task"
 check_trailer "Verified-By"
 
 # ── Warn if Reviewed-By is missing or set to "none-yet" ──────────────────────
-REVIEWED_BY=$(echo "$COMMIT_MSG" | grep -iE "^Reviewed-By:" | head -1)
+REVIEWED_BY="$(printf '%s\n' "$COMMIT_MSG" | grep -iE "^Reviewed-By:" | head -1 || true)"
 REVIEW_WARNING=false
-if [[ -z "$REVIEWED_BY" ]] || echo "$REVIEWED_BY" | grep -qi "none-yet"; then
+if [[ -z "$REVIEWED_BY" ]] || printf '%s\n' "$REVIEWED_BY" | grep -qi "none-yet"; then
   REVIEW_WARNING=true
 fi
 

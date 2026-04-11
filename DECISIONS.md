@@ -16,6 +16,151 @@ Entry format:
 
 ---
 
+## 2026-04-11 — Reviewer Hook Defers Provider Detection To `foreman-review.py`
+
+**Decision:** The `pre-push` hook now resolves its diff base from explicit refs (`refs/heads/main`, then `refs/remotes/origin/main`) and always hands the diff to `scripts/foreman-review.py` when `python3` and the script itself are available. The shell hook no longer pre-checks for the `anthropic` package.
+
+**Why:** The review script already owns provider routing and dependency/key fallback. Keeping a second provider-specific dependency check in shell created drift: valid OpenAI review paths and Anthropic-fallback paths could be skipped before the Python logic ever ran. Explicit local-vs-remote main resolution also fixes fresh-clone repos that only have `origin/main`, where ambiguous abbreviated ref resolution could say `main` existed even though `git diff main...HEAD` still failed.
+
+**Alternatives Considered:** Keep the shell-level Anthropic pre-check (rejected: duplicates provider logic and skips valid review paths). Require a local `main` branch for review (rejected: breaks fresh clones and retained-branch workflows unnecessarily). Teach the hook both provider SDKs in shell (rejected: pushes application logic back into the least suitable layer).
+
+**Agent:** codex-gpt-5
+**Context:** 2026-04-11 full audit and remediation pass
+
+---
+
+## 2026-04-11 — MCP Tool Surface Is Scaffolded As A Shim
+
+**Decision:** Added `docs/mcp-tools.md` and `scripts/foreman-mcp-shim.py` to define and exercise the planned foreman MCP tool surface. Full MCP server implementation is deferred until OpenHands evaluation confirms the backend choice.
+
+**Why:** The April 10 architecture decision identified MCP as the right boundary regardless of whether OpenHands, Codex CLI, Claude Code, or another backend ends up owning execution in Phase 3. A shim is the cheapest way to validate the interface contract now: it proves the tool inputs and outputs are coherent, wraps the existing review/dispatch/classify scripts, and keeps the ledger operations small and explicit without prematurely choosing a server framework.
+
+**Alternatives Considered:** Building a full MCP server immediately with FastMCP or the Python MCP SDK (rejected: backend choice is still open, so locking into a framework now would be premature). Deferring all MCP work until after the OpenHands decision (rejected: the interface boundary itself is worth validating before the server framework choice is made).
+
+**Agent:** codex-gpt-5
+**Context:** 2026-04-11 MCP-as-boundary scaffold
+
+---
+
+## 2026-04-11 — Branch Naming Validation Starts As A Warning In Pre-Push
+
+**Decision:** Added branch-name validation to the `pre-push` hook using the foreman branch pattern. Non-compliant names warn by default, and `FOREMAN_STRICT_BRANCH=1` promotes the warning to a hard gate.
+
+**Why:** This closes the gap between documented branch naming rules and actual local enforcement without surprising existing workflows with a sudden hard block. The env flag mirrors `FOREMAN_HARD_GATE` and makes it easy to test or opt into stricter hygiene per machine before deciding whether hard enforcement should become the default.
+
+**Alternatives Considered:** Hard-block all non-compliant branch names immediately (rejected: too abrupt for a rule that was previously discipline-only). Leave naming entirely advisory in docs (rejected: the repo had already outgrown pure convention here).
+
+**Agent:** codex-gpt-5
+**Context:** 2026-04-11 Phase 2.1 branch validation rollout
+
+---
+
+## 2026-04-11 — Phase 2.1 Adds An Optional Haiku Task Classifier
+
+**Decision:** Added `scripts/foreman-classify.py` and wired it into `scripts/foreman-dispatch.sh` as an optional classifier step. The classifier uses Haiku to return `cheap`, `standard`, or `escalation`, routes upward when confidence is below `0.7`, and forces `escalation` whenever `escalation_triggers` is non-empty. `--no-classify` skips the classifier.
+
+**Why:** This adds cheap routing signal without making it the default source of truth. The upward-only confidence policy is conservative by design: uncertain tasks get promoted rather than under-routed, and specific escalation triggers always win. That preserves Sonnet as the safe default while allowing clearly cheap, low-reasoning tasks to drop to Haiku when the brief already says that is appropriate.
+
+**Alternatives Considered:** Leaving routing fully manual until more telemetry exists (rejected: the classifier is now bounded, optional, and conservative enough to test safely). Allowing low-confidence results to keep their original route (rejected: too likely to under-route ambiguous work). Making the classifier mandatory with no skip flag (rejected: harder to test, debug, or bypass when cost or determinism matters).
+
+**Agent:** codex-gpt-5
+**Context:** 2026-04-11 Phase 2.1 classifier rollout
+
+---
+
+## 2026-04-11 — FOREMAN_HARD_GATE Enables Phase 2.1 Hard-Gate Rollout
+
+**Decision:** Added the `FOREMAN_HARD_GATE` environment flag to the `pre-push` hook so a reviewer `BLOCKER` verdict can be promoted to a hard gate without editing hook code.
+
+**Why:** This allows gradual per-machine rollout and easy testing without committing to a hard gate system-wide before the two-week burn-in is confirmed.
+
+**Alternatives Considered:** Hard-coding the hook to block every `BLOCKER` immediately (rejected: too aggressive before the burn-in is complete). Leaving the hook permanently advisory until a later code edit (rejected: makes rollout and testing slower than necessary).
+
+**Agent:** codex-gpt-5
+**Context:** 2026-04-11 Phase 2.1 hook rollout
+
+---
+
+## 2026-04-10 — OpenHands and MCP as Candidate Replacements for Phases 3–4
+
+**Decision:** Defer a final architecture decision on Phases 3 (Dagger container isolation) and 4 (OpenClaw orchestration), pending evaluation of OpenHands as a combined replacement for both. MCP tool wrapping is identified as the preferred long-term interface boundary regardless of which execution backend wins.
+
+**Why:** Bible AI's post-launch architecture session (2026-04-10, captured in `bible-brain-vision.md`) identified OpenHands (formerly OpenDevin) as a sandboxed autonomous coding agent that already provides what Phases 3 and 4 are intended to provide separately: isolated execution environments, iterative code runs, and MCP tool support. Rather than building Dagger container isolation and then an OpenClaw orchestration layer on top of it, OpenHands may satisfy both requirements in one framework. Evaluating it before committing to the Phase 3/4 build avoids over-engineering.
+
+The MCP-as-boundary pattern applies directly to foreman: repo governance operations (branch ledger queries, trailer validation, review dispatch) should eventually be exposed as MCP tools so any agent backend — OpenHands, Codex CLI, Claude Code — interacts through a uniform interface rather than foreman-specific shell scripts.
+
+**Alternatives Considered:** Proceeding with Dagger (Phase 3) as planned (deferred: evaluate OpenHands first since it may make Dagger unnecessary). Adopting OpenHands immediately (rejected: need to validate it fits the foreman governance model before committing). Skipping both phases entirely (rejected: sandboxed execution is still the right long-term goal; the question is how to get there).
+
+**Agent:** claude-sonnet-4-6
+**Context:** 2026-04-10 cross-project architecture review
+
+---
+
+## 2026-04-10 — Phase 2 Reviewer Uses Python, Not Shell
+
+**Decision:** The Phase 2 automated reviewer is implemented as `scripts/foreman-review.py`
+in Python instead of extending the shell dispatcher or shell hook logic to make API calls
+directly.
+
+**Why:** The reviewer must call external APIs, parse strict JSON reliably, handle large
+multi-line diffs without shell quoting bugs, and grow into structured output and fallback
+logic. Python is the safer implementation language for that job, while shell remains
+appropriate for small orchestration tasks such as branch setup and hook entrypoints.
+
+**Alternatives Considered:** Extending the shell prototype into a shell reviewer (rejected:
+fragile JSON parsing, weak multiline handling, and harder future API/schema support). Moving
+the whole dispatcher into Python immediately (rejected for now: the shell dispatcher already
+handles the current scaffolding use case and does not need the same complexity yet).
+
+**Agent:** codex-gpt-5
+**Context:** 2026-04-10 Phase 2 reviewer implementation
+
+---
+
+## 2026-04-10 — Phase 2 Reviewer Starts As A Soft Gate
+
+**Decision:** The Phase 2 reviewer verdict is advisory in the `pre-push` hook. The hook
+prints `APPROVE`, `REQUEST_CHANGES`, or `BLOCKER`, but a reviewer `BLOCKER` does not stop
+the push yet. Promotion to a hard gate is deferred to Phase 2.1 after two weeks of real use
+with no false `BLOCKER`s.
+
+**Why:** Cross-model review is the core value of foreman, but the system has not yet earned
+the right to block pushes automatically. A soft gate preserves the new signal immediately
+while collecting enough real-world data to determine whether the reviewer is trustworthy.
+A false `BLOCKER` means the reviewer claims a correct change is broken, unsafe, or
+non-compliant when it is actually valid.
+
+**Alternatives Considered:** Hard gate from day one (rejected: too risky before reviewer
+quality is calibrated). Reviewer output as a local-only manual step outside the hook
+(rejected: too easy to skip and not visible enough to shape behavior).
+
+**Agent:** codex-gpt-5
+**Context:** 2026-04-10 Phase 2 reviewer implementation
+
+---
+
+## 2026-04-10 — Phase 2 Model Routing Skips The Haiku Classifier
+
+**Decision:** Resolved OPEN_QUESTIONS.md #1. Phase 2 does not add a Haiku classifier yet.
+All real implementation work defaults to Sonnet-level routing, and the classifier is deferred
+to Phase 2.1 after the reviewer is stable.
+
+**Why:** The current task volume is too small to calibrate a classifier well, and a cheap
+router would add complexity before there is enough data to tune confidence thresholds or
+measure misroutes. The immediate value is the cross-model reviewer, not another decision
+layer ahead of it.
+
+**Alternatives Considered:** Adding the Haiku classifier in Phase 2 (rejected: extra moving
+parts before enough task volume exists to justify them). Sending trivial implementation work
+to Haiku immediately (rejected: not enough evidence yet that the savings outweigh the review
+and routing complexity). Deferring all routing guidance (rejected: Phase 2 still needs a
+clear default).
+
+**Agent:** codex-gpt-5
+**Context:** 2026-04-10 Phase 2 reviewer implementation
+
+---
+
 ## 2026-04-10 — Downstream Governance Docs Stay Manually Mirrored
 
 **Decision:** Chose Option A. Downstream repos keep their own `OPEN_QUESTIONS.md` and

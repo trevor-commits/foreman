@@ -16,6 +16,59 @@ Entry format:
 
 ---
 
+## #7 — Should foreman's MCP server use FastMCP, `mcp-python-sdk`, or a custom implementation?
+
+**Status:** open
+
+**Background:** Phase 2.1 now has an interface scaffold for foreman's governance tool
+surface, but it is intentionally implemented as a CLI shim rather than a real MCP server.
+That keeps the tool contract stable while Phase 3 is still deciding which execution backend
+should own the eventual server path. The remaining question is the server framework itself:
+FastMCP for speed, the official Python MCP SDK for lower abstraction risk, or a custom
+implementation if the chosen backend imposes unusual transport or lifecycle constraints.
+
+**Options on the table:**
+1. **FastMCP:** fastest way to stand up a practical server if the eventual backend just
+   needs a normal Python-hosted MCP tool surface.
+2. **`mcp-python-sdk`:** lower-level but closer to the underlying protocol, with less
+   framework opinion baked in.
+3. **Custom implementation:** only if the chosen execution backend needs something unusual
+   enough that the existing libraries get in the way.
+
+**Wanted:** a recommendation tied to the actual Phase 3 backend choice, especially whether
+OpenHands or another runtime imposes constraints on transport, process lifecycle, auth, or
+tool registration.
+
+**Opened:** 2026-04-11
+
+---
+
+## #6 — Should `Reviewed-By` be promoted from warning-only to hard rejection at commit time?
+
+**Status:** open
+
+**Background:** Phase 2 now runs the reviewer from `hooks/pre-push` and reports
+`APPROVE` / `REQUEST_CHANGES` / `BLOCKER`, but commit-time enforcement still treats
+missing or `none-yet` `Reviewed-By` as warning-only. That leaves a known compliance
+gap between "review is expected" and "review is required." The next decision is blocked
+on the Phase 2.1 gate-promotion call, because promoting too early would create churn if
+the soft gate still produces false `BLOCKER`s or reviewer-skip cases in normal use.
+
+**Options on the table:**
+1. **Promote to hard reject at commit time:** make `hooks/commit-msg` reject commits
+   without an effective `Reviewed-By` once the Phase 2.1 hard-gate decision is made.
+2. **Keep commit-time warning-only, hard-gate later in pre-push:** require review before
+   push/merge, but keep local commit creation lightweight.
+3. **Conditional hard reject:** reject only when reviewer automation actually ran and
+   produced a reviewer model, while preserving warnings for missing dependencies/keys.
+
+**Wanted:** evidence from the Phase 2.1 burn-in on false positives, dependency friction,
+and whether commit-time rejection is materially better than push-time rejection.
+
+**Opened:** 2026-04-11
+
+---
+
 ## #5 — Audit trail is gitignored: how do we make run evidence durable?
 
 **Status:** resolved — commit trailers are the durable artifact
@@ -59,7 +112,7 @@ notes when a task benefits from them.
 
 ## #4 — What does the Phase 2 dispatcher script actually look like?
 
-**Status:** investigating — shell prototype exists
+**Status:** resolved — implemented in Phase 2
 
 **Background:** The roadmap describes Phase 2 as "a script that pipes any diff to a different
 model with a strict output schema, returns APPROVE / REQUEST_CHANGES / BLOCKER with reasons,
@@ -86,14 +139,18 @@ roadmap prose."
 `scripts/foreman-dispatch.sh`. The script reads a `brief.md`, extracts `Model:` and
 `Reasoning Level:` with defaults of `sonnet` / `medium`, prints the resolved model tier and
 foreman-compliant branch name, creates the branch when it can, and warns if the local
-`commit-msg` hook is missing. It does not yet classify tasks via an API call or invoke an
-agent CLI/reviewer.
+`commit-msg` hook is missing. Phase 2 now extends that scaffold by printing the exact
+post-run reviewer invocation the agent should run locally after producing a diff:
+`git diff <main-or-origin/main>...HEAD | python3 scripts/foreman-review.py --author-model <resolved-model> --branch <branch-name> -`.
+The reviewer itself is wired into `hooks/pre-push`, so the dispatcher remains informational
+instead of becoming a second execution path.
 
-**Wanted:** A prototype dispatcher in Option 1 or 2 form that handles the minimum viable
-case: (a) classify task tier, (b) create a foreman-compliant branch, (c) invoke the agent
-CLI, (d) write a brief.md. Review wiring can be Phase 2.1.
+**Resolution:** Keep the dispatcher as a shell scaffold in Phase 2. It handles brief parsing,
+branch creation, and hook verification, then tells the author exactly how to invoke the
+Python reviewer after work is complete. The actual review path lives in
+`scripts/foreman-review.py` and `hooks/pre-push`, not inside the dispatcher.
 
-**Opened:** 2026-04-09
+**Opened:** 2026-04-09 | **Resolved:** 2026-04-10
 
 ---
 
@@ -146,7 +203,7 @@ behavior for missing or `none-yet` `Reviewed-By`.
 
 ## #1 — What is the right model routing policy for Phase 2+?
 
-**Status:** open
+**Status:** resolved — Sonnet default, optional classifier implemented in Phase 2.1
 
 **Background:** The current policy (see AGENTS.md § Model Routing) is:
 - Haiku 4.5 → trivial/cheap tasks (dispatcher, summarization, classification)
@@ -170,8 +227,21 @@ expectation, whether the task changes behavior or architecture, whether it touch
 (auth/data/migrations), whether acceptance criteria are crisp, whether failure is cheap to
 detect. If confidence is low, route upward automatically.
 
-**Wanted:** Validation against 30 days of real task distribution before locking the policy.
-Design the classifier prompt once Phase 1.5 is done and real task volume gives something to
-calibrate against.
+**Resolution:** Phase 2 skips the Haiku classifier entirely. All real implementation work
+defaults to Sonnet-level routing for now, and the classifier is deferred to Phase 2.1 after
+the reviewer is stable. This keeps the system focused on the core value first: a different
+model reviewing every diff. The promotion trigger for revisiting routing automation is the
+same Phase 2.1 checkpoint where reviewer quality is evaluated.
 
-**Opened:** 2026-04-09
+**Update (2026-04-11):** Phase 2.1 now implements the deferred classifier as an optional
+dispatcher step. `scripts/foreman-classify.py` uses Haiku to return structured routing
+JSON, `scripts/foreman-dispatch.sh` can skip it with `--no-classify`, confidence below
+`0.7` routes upward one tier, and any non-empty `escalation_triggers` forces `escalation`.
+The dispatcher only routes down to Haiku when the brief already requests `low` reasoning,
+which keeps Sonnet as the default implementation model.
+
+**Why:** There is not enough real task volume yet to calibrate a classifier well, so adding
+Haiku routing now would create another source of misconfiguration without enough evidence to
+tune it. The cheaper layer can wait until foreman has better reviewer and routing telemetry.
+
+**Opened:** 2026-04-09 | **Resolved:** 2026-04-10
