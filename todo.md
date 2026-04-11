@@ -34,13 +34,7 @@ Each active branch entry should include:
 - `exit checklist`
 - `delete when` or `retain after close`
 - `retain reason` when not deleting
-- branch: `agent/codex/2026-04-11/phase21-validation-pass`
-  source chat: 2026-04-11 "Phase 2.1 validation pass — live API tests, hooks smoke test, downstream sync, hard-gate comment"
-  last refreshed by chat: same chat
-  purpose: run the Phase 2.1 validation pass, add the reusable hook smoke test, sync missing governance artifacts to downstream repos, and record exactly what live validation is blocked locally
-  merge expectation: foreman validation assets updated, downstream sync commits pushed, and remaining live-API blockers logged in test evidence
-  exit checklist: add `scripts/test-hooks.sh`; update `hooks/pre-push`; record baseline/deferred validation in `todo.md`; sync Taxes and bible-ai; commit; push
-  delete when: after this validation branch is merged to `main`
+- None currently.
 
 ## Branch History
 - branch: `agent/codex/2026-04-09/phase15-governance`
@@ -60,6 +54,12 @@ Each active branch entry should include:
   last refreshed by chat: same chat
   purpose: close the retained Phase 2 branch cleanly, land it to `main`, and remove merged branches
   outcome: merged to `main` on 2026-04-11 after the branch ledger and history were closed out for the retained reviewer branch
+  cleanup status: branch deleted locally and on `origin` after merge
+- branch: `agent/codex/2026-04-11/phase21-validation-pass`
+  source chat: 2026-04-11 "Phase 2.1 validation pass — live API tests, hooks smoke test, downstream sync, hard-gate comment"
+  last refreshed by chat: 2026-04-11 "commit any uncommitted work. merge delete any branches"
+  purpose: run the Phase 2.1 validation pass, add the reusable hook smoke test, sync missing governance artifacts to downstream repos, and record exactly what live validation is blocked locally
+  outcome: merged to `main` on 2026-04-11 after landing the hook smoke harness, the explicit hard-gate rollout note, and the deferred live-SDK validation evidence in `todo.md`
   cleanup status: branch deleted locally and on `origin` after merge
 
 ## Audit Record Convention
