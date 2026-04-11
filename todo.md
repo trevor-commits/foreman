@@ -8,6 +8,7 @@ Capture the current goal plus the concrete dependency-ordered steps that are sti
 - [Phase 2.1] Push a test PR with a correctly-tagged commit to confirm `foreman-trailer-check.yml` passes on GitHub's hosted runner, then push a PR with a missing-trailer commit and confirm it fails.
 - [Phase 2.1] Decide whether commit-time `Reviewed-By` should remain warning-only or follow the Phase 2.1 hard-gate promotion path.
 - [Governance] Run `scripts/test-hooks.sh` manually after any hook change.
+- [Governance] Add `foreman-close.sh` to the post-merge checklist in `.github/PULL_REQUEST_TEMPLATE.md` so reviewers run it after merging.
 - [Phase 3 / deferred] Evaluate OpenHands as a combined Phase 3+4 replacement before building Dagger.
 
 ## Completed
@@ -36,10 +37,10 @@ Each active branch entry should include:
 - `retain reason` when not deleting
 - branch: `agent/codex/2026-04-11/enrich-reviewer-prompt`
   source chat: 2026-04-11 "rewrite build_prompt() to inject the full foreman governance context"
-  last refreshed by chat: 2026-04-11 "auto-amend Reviewed-By trailer in pre-push after reviewer runs"
-  purpose: align the reviewer governance prompt, add persistent review telemetry and calibration, and close the `Reviewed-By` workflow gap with a safe pre-push amendment flow
-  merge expectation: merge after `bash -n hooks/pre-push`, the empty-diff manual hook check, `python3 -m py_compile scripts/foreman-calibration.py`, and `python3 scripts/test-review.py` pass and the branch receives a second-model review with a compliant `Reviewed-By` trailer
-  exit checklist: keep `hooks/pre-push`, `AGENTS.project.md`, `CLAUDE.md`, `scripts/foreman-review.py`, `scripts/foreman-calibration.py`, and `scripts/test-review.py` aligned, keep the branch ledger row open until review is complete, then mark the branch ready/merged
+  last refreshed by chat: 2026-04-11 "wire BRANCH_LEDGER.md auto-update into dispatch; add foreman-close.sh lifecycle script"
+  purpose: align the reviewer governance prompt, add persistent review telemetry and calibration, close the `Reviewed-By` workflow gap, and wire branch lifecycle automation into dispatch/close flows
+  merge expectation: merge after `bash -n hooks/pre-push`, `bash -n scripts/foreman-dispatch.sh`, `bash -n scripts/foreman-close.sh`, the empty-diff manual hook check, `python3 -m py_compile scripts/foreman-calibration.py`, and `python3 scripts/test-review.py` pass and the branch receives a second-model review with a compliant `Reviewed-By` trailer
+  exit checklist: keep `hooks/pre-push`, `AGENTS.project.md`, `CLAUDE.md`, `scripts/foreman-review.py`, `scripts/foreman-calibration.py`, `scripts/foreman-dispatch.sh`, `scripts/foreman-close.sh`, `scripts/README.md`, and `scripts/test-review.py` aligned, keep the branch ledger row open until review is complete, then mark the branch ready/merged
   delete when: after merge to `main`
 
 ## Branch History
@@ -119,6 +120,10 @@ Each active branch entry should include:
 - When a verification run closes or updates an audit finding, cross-reference the matching audit record entry and the chat or commit that performed the work.
 
 ## Test Evidence Log
+- date: 2026-04-11
+  command(s): `bash -n scripts/foreman-dispatch.sh`; `bash -n scripts/foreman-close.sh`
+  result: pass — both scripts are syntax-valid, and a temp-repo lifecycle proof confirmed that `foreman-dispatch.sh --no-classify` creates the branch and adds an active ledger row while `foreman-close.sh ... merged` moves that row to Closed Branches and deletes the merged branch locally and on `origin`
+  log/PR reference: local verification run on `agent/codex/2026-04-11/enrich-reviewer-prompt`
 - date: 2026-04-11
   command(s): `bash -n hooks/pre-push`; `HEAD_BEFORE=$(git rev-parse HEAD); FOREMAN_REVIEW_BASE_REF=HEAD bash hooks/pre-push origin; HEAD_AFTER=$(git rev-parse HEAD)`; temp-repo push proof with a stub `scripts/foreman-review.py` to verify first push amends+stops and second push sends the amended SHA
   result: pass — shell syntax is valid, the empty-diff manual hook run skipped review and left `HEAD` unchanged, and the temp-repo proof confirmed the safe flow: first push amends `Reviewed-By` and aborts, second push sends the amended commit

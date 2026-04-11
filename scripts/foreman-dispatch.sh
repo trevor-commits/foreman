@@ -72,6 +72,7 @@ REASONING_RAW="$(extract_field "Reasoning Level" || true)"
 
 MODEL_RAW="${MODEL_RAW:-sonnet}"
 REASONING_RAW="${REASONING_RAW:-medium}"
+TASK_GOAL="$(extract_field "Goal" || true)"
 
 MODEL_NORMALIZED="$(printf '%s' "$MODEL_RAW" | tr '[:upper:]' '[:lower:]')"
 REASONING_NORMALIZED="$(printf '%s' "$REASONING_RAW" | tr '[:upper:]' '[:lower:]')"
@@ -151,6 +152,8 @@ fi
 
 SLUG_PART="$(printf '%s' "$SLUG_PART" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')"
 SLUG_PART="${SLUG_PART:-task}"
+TASK_GOAL="${TASK_GOAL:-$SLUG_PART}"
+THREAD_VALUE="${THREAD_ID:-unknown}"
 
 BRANCH_NAME="agent/${TOOL_NAME}/${DATE_PART}/${SLUG_PART}"
 
@@ -162,17 +165,92 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   REPO_ROOT="$(git rev-parse --show-toplevel)"
   REVIEWER_SCRIPT="$REPO_ROOT/scripts/foreman-review.py"
   REVIEW_BASE_REF="$(resolve_review_base_ref || true)"
+  BRANCH_READY=false
   if git show-ref --verify --quiet "refs/heads/${BRANCH_NAME}"; then
     if git checkout "${BRANCH_NAME}" >/dev/null 2>&1; then
       echo "Checked out existing branch: ${BRANCH_NAME}"
+      BRANCH_READY=true
     else
       echo "Could not switch branches automatically. Run: git checkout ${BRANCH_NAME}"
     fi
   else
     if git checkout -b "${BRANCH_NAME}" >/dev/null 2>&1; then
       echo "Created branch: ${BRANCH_NAME}"
+      BRANCH_READY=true
     else
       echo "Could not create the branch automatically. Run: git checkout -b ${BRANCH_NAME}"
+    fi
+  fi
+
+  if [[ "$BRANCH_READY" == "true" ]]; then
+    LEDGER_PATH="$REPO_ROOT/BRANCH_LEDGER.md"
+    if [[ -f "$LEDGER_PATH" ]] && command -v python3 >/dev/null 2>&1; then
+      if LEDGER_STATUS="$(
+        LEDGER_PATH="$LEDGER_PATH" \
+        LEDGER_BRANCH_NAME="$BRANCH_NAME" \
+        LEDGER_MODEL_TIER="$MODEL_TIER" \
+        LEDGER_TODAY="$TODAY" \
+        LEDGER_TASK_GOAL="$TASK_GOAL" \
+        LEDGER_THREAD_VALUE="$THREAD_VALUE" \
+        python3 <<'PY'
+from pathlib import Path
+import os
+import sys
+
+path = Path(os.environ["LEDGER_PATH"])
+branch = os.environ["LEDGER_BRANCH_NAME"]
+model_tier = os.environ["LEDGER_MODEL_TIER"]
+today = os.environ["LEDGER_TODAY"]
+task_goal = os.environ["LEDGER_TASK_GOAL"].replace("\n", " ").replace("|", "\\|").strip()
+thread_value = os.environ["LEDGER_THREAD_VALUE"].replace("\n", " ").replace("|", "\\|").strip()
+
+text = path.read_text(encoding="utf-8")
+lines = text.splitlines(keepends=True)
+
+header = "## Active Branches\n"
+try:
+    section_index = lines.index(header)
+except ValueError:
+    raise SystemExit(2)
+
+table_header_index = None
+for index in range(section_index + 1, len(lines)):
+    if lines[index].startswith("| Branch |"):
+        table_header_index = index
+        break
+
+if table_header_index is None or table_header_index + 1 >= len(lines):
+    raise SystemExit(3)
+
+branch_marker = f"| `{branch}` |"
+if branch_marker in text:
+    print("exists")
+    raise SystemExit(0)
+
+insert_index = table_header_index + 2
+while insert_index < len(lines) and lines[insert_index].strip() != "":
+    insert_index += 1
+
+row = (
+    f"| `{branch}` | {model_tier} | {today} | {task_goal} | "
+    f"all gates pass + reviewed + APPROVE | {thread_value} | open | "
+    "dispatched via foreman-dispatch.sh |\n"
+)
+lines.insert(insert_index, row)
+path.write_text("".join(lines), encoding="utf-8")
+print("added")
+PY
+      )"; then
+        if [[ "$LEDGER_STATUS" == "added" ]]; then
+          echo "📋 foreman: added row to BRANCH_LEDGER.md for ${BRANCH_NAME}"
+        elif [[ "$LEDGER_STATUS" == "exists" ]]; then
+          echo "ℹ️  foreman: BRANCH_LEDGER.md already contains a row for ${BRANCH_NAME}"
+        fi
+      else
+        echo "WARNING: foreman could not update BRANCH_LEDGER.md for ${BRANCH_NAME}"
+      fi
+    else
+      echo "WARNING: foreman could not update BRANCH_LEDGER.md for ${BRANCH_NAME}"
     fi
   fi
 
@@ -197,3 +275,6 @@ if [[ -n "$REVIEW_BASE_REF" ]]; then
 else
   echo "  if git show-ref --verify --quiet refs/heads/main; then BASE_REF=main; elif git show-ref --verify --quiet refs/remotes/origin/main; then BASE_REF=origin/main; else echo 'Missing main and origin/main'; exit 1; fi; git diff \"\${BASE_REF}\"...HEAD | python3 \"$REVIEWER_SCRIPT\" --author-model ${MODEL_TIER} --branch ${BRANCH_NAME} -"
 fi
+echo ""
+echo "When done and merged, close the branch:"
+echo "  scripts/foreman-close.sh ${BRANCH_NAME} merged"

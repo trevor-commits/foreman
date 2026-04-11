@@ -34,6 +34,11 @@ Required env vars:
 - `ANTHROPIC_API_KEY` — for reviewer (Claude-authored diffs) and Haiku classifier
 - `OPENAI_API_KEY` — for reviewer (Codex/GPT-authored diffs); optional if Anthropic-only setup
 
+## Lifecycle Commands
+
+- `scripts/foreman-dispatch.sh [--no-classify] <brief.md>` creates or checks out the branch proposed from the task brief and now adds an active row to `BRANCH_LEDGER.md`
+- `scripts/foreman-close.sh <branch> <merged|abandoned> [reason]` moves a branch from Active Branches to Closed Branches and, for merged branches, attempts local and remote branch deletion
+
 ## Telemetry And Calibration
 
 - `scripts/foreman-review.py` writes the latest review to `.agent-runs/last-review.json` and appends telemetry to `.agent-runs/review-log.jsonl`
