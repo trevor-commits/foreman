@@ -64,7 +64,7 @@ This repo: shell scripts, Markdown. Language-agnostic — the conventions apply 
 
 ## Handoff Summary
 
-Completed through 2026-04-11:
+Completed through 2026-04-11 and present on disk on `main`:
 - Phase 1.5 landed in `foreman`, `Taxes`, and `bible-ai`
 - `.github/workflows/foreman-trailer-check.yml` now enforces required trailers on pushes/PRs to `main`
 - `.agent-runs/` is now documented as optional scratch space; commit trailers are the durable audit artifact
@@ -87,7 +87,7 @@ Skipped or caveated:
 - the classifier still needs live validation with a real `ANTHROPIC_API_KEY`; current fallback behavior defaults to `standard` when the key or package is unavailable
 - the default system `python3` in this environment still lacks `anthropic` and `openai`, so the local reviewer path currently emits a warning and skips live review until those packages are installed into a usable interpreter or venv
 
-Next session should:
+Planned for next session:
 - validate whether reviewer `BLOCKER`s are accurate enough to promote to a hard gate after two weeks of use
 - validate the live Haiku classifier path against real task briefs and confirm the escalation threshold is conservative enough
 - validate the OpenAI reviewer path and the Claude-fallback path with live credentials
