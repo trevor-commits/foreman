@@ -16,6 +16,7 @@ Capture the current goal plus the concrete dependency-ordered steps that are sti
 
 ## Completed
 Preserve a durable completion trail for verified work instead of deleting it from active planning.
+- Completed 2026-04-11: Added `scripts/foreman-pr-prep.sh`, which reads the current branch governance state and prints a PR description pre-filled from commit trailers, last-review data, the task brief, and `BRANCH_LEDGER.md` | priority: P1 | owner: Trevor Gillette | target date: 2026-04-11
 - Completed 2026-04-11: Installed `anthropic` and `openai` into the local Python 3.14 environment and completed live classifier, Claude-fallback reviewer, Anthropic Sonnet reviewer, and OpenAI reviewer validation against trivial README diffs | priority: P1 | owner: Trevor Gillette | target date: 2026-04-11
 - Completed 2026-04-11: Added `scripts/test-hooks.sh`, a temp-repo smoke harness that validates the local `commit-msg` hook rejects missing trailers and accepts a fully tagged commit | priority: P1 | owner: Trevor Gillette | target date: 2026-04-11
 - Completed 2026-04-11: Added the optional Phase 2.1 Haiku classifier via `scripts/foreman-classify.py` and wired it into `scripts/foreman-dispatch.sh` with conservative upward routing, `--no-classify`, and no-key fallback to `standard` | priority: P1 | owner: Trevor Gillette | target date: 2026-04-11
@@ -123,6 +124,10 @@ Each active branch entry should include:
 - When a verification run closes or updates an audit finding, cross-reference the matching audit record entry and the chat or commit that performed the work.
 
 ## Test Evidence Log
+- date: 2026-04-11
+  command(s): `bash -n scripts/foreman-pr-prep.sh`
+  result: pass — the new PR-prep helper script is syntax-valid and ready to generate pre-filled GitHub PR descriptions from current branch governance state
+  log/PR reference: local verification run in `main`
 - date: 2026-04-11
   command(s): `pip3 install mcp --break-system-packages 2>&1 | tail -3`; `python3 -m py_compile scripts/foreman-mcp-server.py`; `python3 -c "from scripts.foreman_mcp_server import mcp; print(f'tools: {list(mcp._tools.keys())}')"`
   result: pass — installed the official `mcp` package with FastMCP support, the executable MCP server entrypoint compiles cleanly, and the import smoke check lists the registered tools
