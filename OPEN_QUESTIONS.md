@@ -176,7 +176,7 @@ behavior for missing or `none-yet` `Reviewed-By`.
 
 ## #1 — What is the right model routing policy for Phase 2+?
 
-**Status:** resolved — Sonnet default, classifier deferred to Phase 2.1
+**Status:** resolved — Sonnet default, optional classifier implemented in Phase 2.1
 
 **Background:** The current policy (see AGENTS.md § Model Routing) is:
 - Haiku 4.5 → trivial/cheap tasks (dispatcher, summarization, classification)
@@ -205,6 +205,13 @@ defaults to Sonnet-level routing for now, and the classifier is deferred to Phas
 the reviewer is stable. This keeps the system focused on the core value first: a different
 model reviewing every diff. The promotion trigger for revisiting routing automation is the
 same Phase 2.1 checkpoint where reviewer quality is evaluated.
+
+**Update (2026-04-11):** Phase 2.1 now implements the deferred classifier as an optional
+dispatcher step. `scripts/foreman-classify.py` uses Haiku to return structured routing
+JSON, `scripts/foreman-dispatch.sh` can skip it with `--no-classify`, confidence below
+`0.7` routes upward one tier, and any non-empty `escalation_triggers` forces `escalation`.
+The dispatcher only routes down to Haiku when the brief already requests `low` reasoning,
+which keeps Sonnet as the default implementation model.
 
 **Why:** There is not enough real task volume yet to calibrate a classifier well, so adding
 Haiku routing now would create another source of misconfiguration without enough evidence to

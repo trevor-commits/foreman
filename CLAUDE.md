@@ -1,7 +1,7 @@
 # Working Memory — foreman
 
 _Claude's working memory. Read at the start of every session. Update as context changes._
-_Last updated: 2026-04-10_
+_Last updated: 2026-04-11_
 
 ---
 
@@ -39,7 +39,7 @@ enforcement, and automated cross-model review are active. The reviewer runs as a
 from `hooks/pre-push`, and the dispatcher now prints the post-run reviewer invocation.
 
 Phases still to build:
-- Phase 2.1: hard-gate promotion, Haiku classifier reconsideration, and OpenAI fallback validation
+- Phase 2.1: hard-gate promotion, live classifier validation, and OpenAI fallback validation
 - Phase 3: Dagger Container Use (isolation for parallel agents)
 - Phase 4: OpenClaw orchestration (if still needed after Phase 3)
 
@@ -60,7 +60,7 @@ This repo: shell scripts, Markdown. Language-agnostic — the conventions apply 
 
 ## Handoff Summary
 
-Completed through 2026-04-10:
+Completed through 2026-04-11:
 - Phase 1.5 landed in `foreman`, `Taxes`, and `bible-ai`
 - `.github/workflows/foreman-trailer-check.yml` now enforces required trailers on pushes/PRs to `main`
 - `.agent-runs/` is now documented as optional scratch space; commit trailers are the durable audit artifact
@@ -70,17 +70,19 @@ Completed through 2026-04-10:
 - Phase 2 reviewer automation is now implemented via `scripts/foreman-review.py`
 - `hooks/pre-push` now runs the reviewer after the existing gates and reports `APPROVE` / `REQUEST_CHANGES` / `BLOCKER` as a soft gate
 - `scripts/foreman-dispatch.sh` now prints the exact post-run reviewer command for the author to run manually
+- `scripts/foreman-classify.py` now provides an optional Haiku task classifier for `scripts/foreman-dispatch.sh`, with upward routing on low confidence and `--no-classify` for bypass/testing
 
 Skipped or caveated:
 - `Reviewed-By` remains warning-only at commit time even though the reviewer now returns a concrete `reviewer_model`
 - downstream governance-doc copies can still drift between sync passes because manual mirroring was kept by design
 - hard-gating reviewer `BLOCKER`s is deferred to Phase 2.1 pending two weeks of use with no false `BLOCKER`s
 - the OpenAI reviewer path for Claude-authored diffs still needs explicit live validation once `OPENAI_API_KEY` is available
+- the classifier still needs live validation with a real `ANTHROPIC_API_KEY`; current fallback behavior defaults to `standard` when the key or package is unavailable
 - the default system `python3` in this environment still lacks `anthropic` and `openai`, so the local `pre-push` reviewer will skip until those packages are installed into a usable interpreter or venv
 
 Next session should:
 - validate whether reviewer `BLOCKER`s are accurate enough to promote to a hard gate after two weeks of use
-- decide whether Phase 2.1 should add the deferred Haiku classifier after enough task-volume evidence exists
+- validate the live Haiku classifier path against real task briefs and confirm the escalation threshold is conservative enough
 - validate the OpenAI reviewer path and the Claude-fallback path with live credentials
 - validate the trailer-check workflow from a hosted runner rather than syntax-only/local inspection
 
@@ -94,6 +96,8 @@ See DECISIONS.md for full history.
   accept limited drift rather than adding sync machinery now.
 - **2026-04-10** — Phase 2 review automation uses Python, runs as a soft gate first,
   and defers the Haiku classifier to Phase 2.1.
+- **2026-04-11** — Phase 2.1 adds an optional Haiku classifier with upward routing on
+  low confidence and a `--no-classify` bypass for dispatch testing or cost control.
 - **2026-04-09** — Phase 1.5 server-side trailer enforcement is now active in `foreman`,
   `Taxes`, and `bible-ai`.
 - **2026-04-09** — Adopted Codex's phased approach to avoid overbuilding: branch ledger

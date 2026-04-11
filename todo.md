@@ -6,13 +6,12 @@ Capture the current goal plus the concrete dependency-ordered steps that are sti
 - [Phase 2.1] Validate OpenAI reviewer path with live `OPENAI_API_KEY`.
 - [Phase 2.1] Validate Claude-fallback (Haiku) path with live `ANTHROPIC_API_KEY`.
 - [Phase 2.1] Validate trailer-check GitHub Actions workflow from a real hosted runner, not local syntax check only.
-- [Phase 2.1] Add Haiku classifier to `scripts/foreman-dispatch.sh` after reviewer telemetry exists.
 - [Phase 3 / deferred] Evaluate OpenHands as a combined Phase 3+4 replacement before building Dagger.
 
 ## Completed
 Preserve a durable completion trail for verified work instead of deleting it from active planning.
+- Completed 2026-04-11: Added the optional Phase 2.1 Haiku classifier via `scripts/foreman-classify.py` and wired it into `scripts/foreman-dispatch.sh` with conservative upward routing, `--no-classify`, and no-key fallback to `standard` | priority: P1 | owner: Trevor Gillette | target date: 2026-04-11
 - Completed 2026-04-09: Landed the Phase 1.5 governance rollout across `foreman`, `Taxes`, and `bible-ai`. Merged the stale downstream install branches to `main`, added `.github/workflows/foreman-trailer-check.yml` in all three repos, clarified that `.agent-runs/` is scratch space while commit trailers are the durable audit artifact, added `scripts/foreman-dispatch.sh`, refreshed `CLAUDE.md`, and pushed every reachable repo update | priority: P1 | owner: Trevor Gillette | target date: 2026-04-09
-- No completed entries recorded yet.
 
 ## Suggested Recommendation Log
 Keep materially new suggestions here so they survive beyond the current chat.
@@ -84,6 +83,7 @@ Each active branch entry should include:
 | Hook or branch-policy changes | `bash hooks/pre-push origin` | Before every push from a feature branch | Exits `0`; no gate failures; reviewer may skip only for missing keys/dependencies or empty diff |
 | Pre-push reviewer smoke coverage | `bash scripts/test-review.sh` | Every push | Must pass |
 | Dispatcher script changes | `bash -n scripts/foreman-dispatch.sh` | Before commit and before push when `scripts/foreman-dispatch.sh` changes | Exits `0`; no shell syntax errors |
+| Classifier script changes | `python3 scripts/foreman-classify.py <brief.md>` | Before commit and before push when `scripts/foreman-classify.py` changes | Exits `0` and prints valid JSON; without credentials it must fall back to `standard` |
 | Reviewer script changes | `python3 -c "import runpy; runpy.run_path('scripts/foreman-review.py', run_name='foreman_review')"` | Before commit and before push when `scripts/foreman-review.py` changes | Exits `0`; file loads without syntax or import-time failure |
 | Trailer enforcement validation | `git push origin <branch>` | Every PR or push that is intended to validate `.github/workflows/foreman-trailer-check.yml` | Hosted `Foreman Trailer Check` workflow passes on GitHub Actions |
 

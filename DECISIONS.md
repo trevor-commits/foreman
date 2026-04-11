@@ -16,6 +16,19 @@ Entry format:
 
 ---
 
+## 2026-04-11 — Phase 2.1 Adds An Optional Haiku Task Classifier
+
+**Decision:** Added `scripts/foreman-classify.py` and wired it into `scripts/foreman-dispatch.sh` as an optional classifier step. The classifier uses Haiku to return `cheap`, `standard`, or `escalation`, routes upward when confidence is below `0.7`, and forces `escalation` whenever `escalation_triggers` is non-empty. `--no-classify` skips the classifier.
+
+**Why:** This adds cheap routing signal without making it the default source of truth. The upward-only confidence policy is conservative by design: uncertain tasks get promoted rather than under-routed, and specific escalation triggers always win. That preserves Sonnet as the safe default while allowing clearly cheap, low-reasoning tasks to drop to Haiku when the brief already says that is appropriate.
+
+**Alternatives Considered:** Leaving routing fully manual until more telemetry exists (rejected: the classifier is now bounded, optional, and conservative enough to test safely). Allowing low-confidence results to keep their original route (rejected: too likely to under-route ambiguous work). Making the classifier mandatory with no skip flag (rejected: harder to test, debug, or bypass when cost or determinism matters).
+
+**Agent:** codex-gpt-5
+**Context:** 2026-04-11 Phase 2.1 classifier rollout
+
+---
+
 ## 2026-04-11 — FOREMAN_HARD_GATE Enables Phase 2.1 Hard-Gate Rollout
 
 **Decision:** Added the `FOREMAN_HARD_GATE` environment flag to the `pre-push` hook so a reviewer `BLOCKER` verdict can be promoted to a hard gate without editing hook code.

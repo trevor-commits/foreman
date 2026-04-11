@@ -139,8 +139,13 @@ Phase 2 routing policy:
 | Reviewing another model's output | Different model than author | medium |
 
 Notes:
-- Skip the Haiku classifier in Phase 2. Default real implementation work to Sonnet until
-  Phase 2.1 has enough reviewer/routing evidence to justify a classifier.
+- Phase 2.1 adds an optional Haiku classifier in `scripts/foreman-classify.py`, called by
+  `scripts/foreman-dispatch.sh` unless `--no-classify` is used.
+- The classifier returns `cheap`, `standard`, or `escalation`; confidence below `0.7`
+  routes upward one tier, and any non-empty `escalation_triggers` forces escalation.
+- The dispatcher only routes down to Haiku when the classifier says `cheap` and the brief
+  already requests `low` reasoning. Otherwise the baseline remains Sonnet for normal work
+  and Opus for escalations.
 - Key rule: the reviewer must always be a different model than the one that wrote the code.
 
 ---
