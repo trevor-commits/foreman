@@ -12,6 +12,7 @@ Update this file when you open a branch (set status `open`) and when you close i
 
 | Branch | Agent | Date | Task | Merge Condition | Thread | Status | Notes |
 |--------|-------|------|------|-----------------|--------|--------|-------|
+| `agent/codex/2026-04-11/enrich-reviewer-prompt` | codex-gpt-5 | 2026-04-11 | Enrich the reviewer prompt with the full foreman governance context and add validation coverage for the reviewer payload schema. | `python3 scripts/test-review.py` passes, review trailers stay schema-accurate, and this branch is reviewed before merge. | `TODO: verify` | `open` | Opened from protected `main` because direct task pushes to `main` are disallowed; branch keeps the change mergeable under foreman rules. |
 
 ---
 

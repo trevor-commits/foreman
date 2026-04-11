@@ -33,7 +33,13 @@ Each active branch entry should include:
 - `exit checklist`
 - `delete when` or `retain after close`
 - `retain reason` when not deleting
-- None currently.
+- branch: `agent/codex/2026-04-11/enrich-reviewer-prompt`
+  source chat: 2026-04-11 "rewrite build_prompt() to inject the full foreman governance context"
+  last refreshed by chat: same chat
+  purpose: align the automated reviewer prompt with foreman's actual trailer, branch, and merge governance rules and extend the local validation coverage
+  merge expectation: merge after `python3 scripts/test-review.py` passes and the branch receives a second-model review with a compliant `Reviewed-By` trailer
+  exit checklist: keep `scripts/foreman-review.py` and `scripts/test-review.py` aligned, keep the branch ledger row open until review is complete, then mark the branch ready/merged
+  delete when: after merge to `main`
 
 ## Branch History
 - branch: `agent/codex/2026-04-09/phase15-governance`
@@ -112,6 +118,10 @@ Each active branch entry should include:
 - When a verification run closes or updates an audit finding, cross-reference the matching audit record entry and the chat or commit that performed the work.
 
 ## Test Evidence Log
+- date: 2026-04-11
+  command(s): `python3 scripts/test-review.py`
+  result: pass — reviewer smoke tests still pass after the governance-prompt rewrite and the added validation coverage for valid `reviewer_model` handling plus missing-`note` rejection
+  log/PR reference: local verification run on `agent/codex/2026-04-11/enrich-reviewer-prompt`
 - date: 2026-04-11
   command(s): `sed -n '1,220p' /Users/gillettes/Coding Projects/bible-ai/.github/workflows/foreman-trailer-check.yml`; `test -f /Users/gillettes/Coding Projects/bible-ai/scripts/ci/verify-foreman-trailers.sh`
   result: pass — `bible-ai` trailer workflow delegates to `./scripts/ci/verify-foreman-trailers.sh`, and that script exists; no workflow hotfix was needed

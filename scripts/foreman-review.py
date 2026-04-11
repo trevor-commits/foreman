@@ -89,7 +89,7 @@ def resolve_reviewer(author_model: str) -> tuple[str, str]:
 
 
 def build_prompt(diff_text: str, author_model: str, branch: str) -> str:
-    return f"""You are a code reviewer. Read the diff below and return a JSON object with this exact schema:
+    return f"""You are a foreman governance reviewer. Read the diff below and return a JSON object with this exact schema:
 
 {{
   "verdict": "APPROVE" | "REQUEST_CHANGES" | "BLOCKER",
@@ -100,16 +100,39 @@ def build_prompt(diff_text: str, author_model: str, branch: str) -> str:
   "reviewer_model": "<model name>"
 }}
 
-Rules:
-- APPROVE: diff is correct, complete, and safe to merge
-- REQUEST_CHANGES: meaningful concerns but not merge-blocking; author should fix before merge
-- BLOCKER: security issue, data loss risk, broken logic, or missing required foreman trailers
-- Do not flag style preferences as REQUEST_CHANGES — only flag things that affect correctness, safety, or compliance
+Foreman governance context:
+- COMMIT TRAILER SCHEMA
+  Required trailers (hard fail if missing): Agent, Thread, Task, Verified-By
+  Optional warning: Reviewed-By (must be a different model than Agent when populated)
+  Format: each trailer must appear after a blank line, as "Key: value" with no blank lines between trailers.
+  Example of a valid trailer block:
+    Agent: codex-5.3
+    Thread: https://...
+    Task: Add Stripe webhook handler
+    Verified-By: pytest, ruff
+    Reviewed-By: claude-sonnet-4-6
+- BRANCH NAMING CONVENTION
+  Branches should match: ^(agent|review)/[a-z0-9_-]+/[0-9]{4}-[0-9]{2}-[0-9]{2}/[a-z0-9-]+$
+  A diff on a branch that does not match this pattern should be flagged as a warning / REQUEST_CHANGES, not a BLOCKER, unless the branch is a protected branch name: main, master, production, prod.
+- MERGE CONDITIONS
+  A diff is not merge-ready unless all automated gates pass, Reviewed-By is set to a different model than Agent, the reviewer verdict is APPROVE, the Task in the commit matches the branch slug, and a BRANCH_LEDGER.md row exists and is updated to ready or merged.
+- BLOCKER CRITERIA
+  Flag as BLOCKER if the diff shows any of: commits missing any of Agent, Thread, Task, or Verified-By trailers; direct modification to a protected branch; a security issue, data loss risk, or broken logic; or a commit where Reviewed-By matches Agent (self-review).
+- REQUEST_CHANGES CRITERIA
+  Flag as REQUEST_CHANGES if Reviewed-By is missing or set to "none-yet"; if branch naming is non-compliant; or if the Task trailer does not match the actual changes.
+
+Review rules:
+- APPROVE: diff is correct, complete, safe to merge, and shows no governance or correctness problems
+- REQUEST_CHANGES: meaningful concerns or process gaps that should be fixed before merge, but not an immediate hard stop
+- BLOCKER: hard governance failure, protected-branch violation, self-review, security issue, data loss risk, or broken logic
+- Use only evidence present in the diff and the supplied metadata. Do not invent missing trailers, branch-ledger state, merge readiness, or protected-branch edits if the evidence is not visible.
+- Do not flag style preferences or formatting choices
 - If the diff is empty or whitespace-only, return APPROVE with summary "Empty diff — nothing to review"
 - Return only the JSON object, no other text
 
 Author model: {author_model}
 Branch: {branch}
+The reviewer model must be different from the author model. You are reviewing work by {author_model} — do not approve changes that were reviewed by the same model family.
 
 Diff:
 ```diff

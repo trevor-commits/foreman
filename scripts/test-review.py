@@ -98,6 +98,34 @@ def test_validate_review_invalid_severity() -> None:
     raise AssertionError("validate_review should raise ReviewError for invalid issue severity")
 
 
+def test_validate_review_accepts_valid_review_with_reviewer_model() -> None:
+    good_review = {
+        "verdict": "APPROVE",
+        "summary": "looks good",
+        "issues": [],
+        "reviewer_model": "claude-sonnet-4-6",
+    }
+    result = module.validate_review(good_review, "o4-mini")
+    assert result["verdict"] == "APPROVE", result
+    assert result["summary"] == "looks good", result
+    assert result["issues"] == [], result
+    assert result["reviewer_model"] == "o4-mini", result
+
+
+def test_validate_review_rejects_issue_missing_note() -> None:
+    bad_review = {
+        "verdict": "REQUEST_CHANGES",
+        "summary": "missing note",
+        "issues": [{"severity": "warning", "location": "foo.py:1"}],
+        "reviewer_model": "claude-sonnet-4-6",
+    }
+    try:
+        module.validate_review(bad_review, "test-model")
+    except module.ReviewError:
+        return
+    raise AssertionError("validate_review should raise ReviewError when issue note is missing")
+
+
 def main() -> int:
     tests = [
         ("empty diff returns APPROVE without an API call", test_empty_diff_review),
@@ -107,6 +135,8 @@ def main() -> int:
         ("extract_json_object parses bare JSON", test_extract_json_from_bare_string),
         ("validate_review rejects missing verdict", test_validate_review_missing_verdict),
         ("validate_review rejects invalid severity", test_validate_review_invalid_severity),
+        ("validate_review accepts a valid review payload with reviewer_model", test_validate_review_accepts_valid_review_with_reviewer_model),
+        ("validate_review rejects an issue missing note", test_validate_review_rejects_issue_missing_note),
     ]
 
     for description, fn in tests:
