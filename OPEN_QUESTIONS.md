@@ -16,6 +16,33 @@ Entry format:
 
 ---
 
+## #7 — Should foreman's MCP server use FastMCP, `mcp-python-sdk`, or a custom implementation?
+
+**Status:** open
+
+**Background:** Phase 2.1 now has an interface scaffold for foreman's governance tool
+surface, but it is intentionally implemented as a CLI shim rather than a real MCP server.
+That keeps the tool contract stable while Phase 3 is still deciding which execution backend
+should own the eventual server path. The remaining question is the server framework itself:
+FastMCP for speed, the official Python MCP SDK for lower abstraction risk, or a custom
+implementation if the chosen backend imposes unusual transport or lifecycle constraints.
+
+**Options on the table:**
+1. **FastMCP:** fastest way to stand up a practical server if the eventual backend just
+   needs a normal Python-hosted MCP tool surface.
+2. **`mcp-python-sdk`:** lower-level but closer to the underlying protocol, with less
+   framework opinion baked in.
+3. **Custom implementation:** only if the chosen execution backend needs something unusual
+   enough that the existing libraries get in the way.
+
+**Wanted:** a recommendation tied to the actual Phase 3 backend choice, especially whether
+OpenHands or another runtime imposes constraints on transport, process lifecycle, auth, or
+tool registration.
+
+**Opened:** 2026-04-11
+
+---
+
 ## #6 — Should `Reviewed-By` be promoted from warning-only to hard rejection at commit time?
 
 **Status:** open

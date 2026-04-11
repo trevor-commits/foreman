@@ -16,6 +16,19 @@ Entry format:
 
 ---
 
+## 2026-04-11 — MCP Tool Surface Is Scaffolded As A Shim
+
+**Decision:** Added `docs/mcp-tools.md` and `scripts/foreman-mcp-shim.py` to define and exercise the planned foreman MCP tool surface. Full MCP server implementation is deferred until OpenHands evaluation confirms the backend choice.
+
+**Why:** The April 10 architecture decision identified MCP as the right boundary regardless of whether OpenHands, Codex CLI, Claude Code, or another backend ends up owning execution in Phase 3. A shim is the cheapest way to validate the interface contract now: it proves the tool inputs and outputs are coherent, wraps the existing review/dispatch/classify scripts, and keeps the ledger operations small and explicit without prematurely choosing a server framework.
+
+**Alternatives Considered:** Building a full MCP server immediately with FastMCP or the Python MCP SDK (rejected: backend choice is still open, so locking into a framework now would be premature). Deferring all MCP work until after the OpenHands decision (rejected: the interface boundary itself is worth validating before the server framework choice is made).
+
+**Agent:** codex-gpt-5
+**Context:** 2026-04-11 MCP-as-boundary scaffold
+
+---
+
 ## 2026-04-11 — Branch Naming Validation Starts As A Warning In Pre-Push
 
 **Decision:** Added branch-name validation to the `pre-push` hook using the foreman branch pattern. Non-compliant names warn by default, and `FOREMAN_STRICT_BRANCH=1` promotes the warning to a hard gate.
