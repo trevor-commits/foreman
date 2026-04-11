@@ -2,10 +2,12 @@
 
 ## Active Next Steps
 Capture the current goal plus the concrete dependency-ordered steps that are still open.
-- Keep this section short, current, and ordered by impact/dependency.
-- Put audit-created actionable execution items at the top of this section so audit follow-through is the next queue to execute.
-- If the current chat creates or discovers more urgent execution-ready work than the existing queue reflects, persist and move that fresher work to the top of this section before handoff so the chat is not the only durable record.
-- When a step is verified complete, move or summarize it in `## Completed` instead of deleting the history.
+- [Phase 2.1] Promote `BLOCKER` to hard gate in pre-push after two-week burn-in; defer until 2026-04-24.
+- [Phase 2.1] Validate OpenAI reviewer path with live `OPENAI_API_KEY`.
+- [Phase 2.1] Validate Claude-fallback (Haiku) path with live `ANTHROPIC_API_KEY`.
+- [Phase 2.1] Validate trailer-check GitHub Actions workflow from a real hosted runner, not local syntax check only.
+- [Phase 2.1] Add Haiku classifier to `scripts/foreman-dispatch.sh` after reviewer telemetry exists.
+- [Phase 3 / deferred] Evaluate OpenHands as a combined Phase 3+4 replacement before building Dagger.
 
 ## Completed
 Preserve a durable completion trail for verified work instead of deleting it from active planning.
@@ -79,7 +81,10 @@ Each active branch entry should include:
 ## Testing Cadence Matrix
 | Trigger | Command(s) | Cadence | Gate Criteria |
 |---|---|---|---|
-| TODO: verify | TODO: verify | TODO: verify | TODO: verify |
+| Hook or branch-policy changes | `bash hooks/pre-push origin` | Before every push from a feature branch | Exits `0`; no gate failures; reviewer may skip only for missing keys/dependencies or empty diff |
+| Dispatcher script changes | `bash -n scripts/foreman-dispatch.sh` | Before commit and before push when `scripts/foreman-dispatch.sh` changes | Exits `0`; no shell syntax errors |
+| Reviewer script changes | `python3 -c "import runpy; runpy.run_path('scripts/foreman-review.py', run_name='foreman_review')"` | Before commit and before push when `scripts/foreman-review.py` changes | Exits `0`; file loads without syntax or import-time failure |
+| Trailer enforcement validation | `git push origin <branch>` | Every PR or push that is intended to validate `.github/workflows/foreman-trailer-check.yml` | Hosted `Foreman Trailer Check` workflow passes on GitHub Actions |
 
 ## Feedback Decision Log
 Record outside feedback and the resulting reasoning once, then update the same entry as the decision evolves.

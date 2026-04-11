@@ -16,6 +16,32 @@ Entry format:
 
 ---
 
+## #6 — Should `Reviewed-By` be promoted from warning-only to hard rejection at commit time?
+
+**Status:** open
+
+**Background:** Phase 2 now runs the reviewer from `hooks/pre-push` and reports
+`APPROVE` / `REQUEST_CHANGES` / `BLOCKER`, but commit-time enforcement still treats
+missing or `none-yet` `Reviewed-By` as warning-only. That leaves a known compliance
+gap between "review is expected" and "review is required." The next decision is blocked
+on the Phase 2.1 gate-promotion call, because promoting too early would create churn if
+the soft gate still produces false `BLOCKER`s or reviewer-skip cases in normal use.
+
+**Options on the table:**
+1. **Promote to hard reject at commit time:** make `hooks/commit-msg` reject commits
+   without an effective `Reviewed-By` once the Phase 2.1 hard-gate decision is made.
+2. **Keep commit-time warning-only, hard-gate later in pre-push:** require review before
+   push/merge, but keep local commit creation lightweight.
+3. **Conditional hard reject:** reject only when reviewer automation actually ran and
+   produced a reviewer model, while preserving warnings for missing dependencies/keys.
+
+**Wanted:** evidence from the Phase 2.1 burn-in on false positives, dependency friction,
+and whether commit-time rejection is materially better than push-time rejection.
+
+**Opened:** 2026-04-11
+
+---
+
 ## #5 — Audit trail is gitignored: how do we make run evidence durable?
 
 **Status:** resolved — commit trailers are the durable artifact
