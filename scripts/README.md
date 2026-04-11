@@ -34,9 +34,11 @@ Required env vars:
 - `ANTHROPIC_API_KEY` — for reviewer (Claude-authored diffs) and Haiku classifier
 - `OPENAI_API_KEY` — for reviewer (Codex/GPT-authored diffs); optional if Anthropic-only setup
 
-## Lifecycle Commands
+## Operational Commands
 
-- `scripts/foreman-dispatch.sh [--no-classify] <brief.md>` creates or checks out the branch proposed from the task brief and now adds an active row to `BRANCH_LEDGER.md`
+- `scripts/foreman-dispatch.sh [--no-classify] <brief.md>` creates or checks out the branch proposed from the task brief and adds an active row to `BRANCH_LEDGER.md`
+- `scripts/foreman-status.sh` prints the current branch's governance state, last commit trailers, last review verdict, ledger row status, and active gate env vars
+- `scripts/foreman-merge-check.sh` evaluates the merge conditions and exits `0` only when the branch is governance-ready for PR
 - `scripts/foreman-close.sh <branch> <merged|abandoned> [reason]` moves a branch from Active Branches to Closed Branches and, for merged branches, attempts local and remote branch deletion
 
 ## Telemetry And Calibration

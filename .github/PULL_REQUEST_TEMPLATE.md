@@ -28,6 +28,11 @@
 - [ ] Build passes (if applicable)
 - [ ] Pre-push gate ran without `--no-verify`
 
+## Pre-Merge Checklist
+
+- [ ] `bash scripts/foreman-merge-check.sh` passes (all conditions green)
+- [ ] `bash scripts/foreman-close.sh <branch> merged` run after merge
+
 ---
 
 ## Second-Model Review

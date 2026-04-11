@@ -37,10 +37,10 @@ Each active branch entry should include:
 - `retain reason` when not deleting
 - branch: `agent/codex/2026-04-11/enrich-reviewer-prompt`
   source chat: 2026-04-11 "rewrite build_prompt() to inject the full foreman governance context"
-  last refreshed by chat: 2026-04-11 "wire BRANCH_LEDGER.md auto-update into dispatch; add foreman-close.sh lifecycle script"
-  purpose: align the reviewer governance prompt, add persistent review telemetry and calibration, close the `Reviewed-By` workflow gap, and wire branch lifecycle automation into dispatch/close flows
-  merge expectation: merge after `bash -n hooks/pre-push`, `bash -n scripts/foreman-dispatch.sh`, `bash -n scripts/foreman-close.sh`, the empty-diff manual hook check, `python3 -m py_compile scripts/foreman-calibration.py`, and `python3 scripts/test-review.py` pass and the branch receives a second-model review with a compliant `Reviewed-By` trailer
-  exit checklist: keep `hooks/pre-push`, `AGENTS.project.md`, `CLAUDE.md`, `scripts/foreman-review.py`, `scripts/foreman-calibration.py`, `scripts/foreman-dispatch.sh`, `scripts/foreman-close.sh`, `scripts/README.md`, and `scripts/test-review.py` aligned, keep the branch ledger row open until review is complete, then mark the branch ready/merged
+  last refreshed by chat: 2026-04-11 "add foreman-status.sh and foreman-merge-check.sh for merge readiness assessment"
+  purpose: align the reviewer governance prompt, add persistent review telemetry and calibration, close the `Reviewed-By` workflow gap, wire branch lifecycle automation into dispatch/close flows, and add operator-facing status and merge-readiness commands
+  merge expectation: merge after `bash -n hooks/pre-push`, `bash -n scripts/foreman-dispatch.sh`, `bash -n scripts/foreman-close.sh`, `bash -n scripts/foreman-status.sh`, `bash -n scripts/foreman-merge-check.sh`, the empty-diff manual hook check, `python3 -m py_compile scripts/foreman-calibration.py`, and `python3 scripts/test-review.py` pass and the branch receives a second-model review with a compliant `Reviewed-By` trailer
+  exit checklist: keep `hooks/pre-push`, `AGENTS.project.md`, `CLAUDE.md`, `.github/PULL_REQUEST_TEMPLATE.md`, `scripts/foreman-review.py`, `scripts/foreman-calibration.py`, `scripts/foreman-dispatch.sh`, `scripts/foreman-close.sh`, `scripts/foreman-status.sh`, `scripts/foreman-merge-check.sh`, `scripts/README.md`, and `scripts/test-review.py` aligned, keep the branch ledger row open until review is complete, then mark the branch ready/merged
   delete when: after merge to `main`
 
 ## Branch History
@@ -120,6 +120,10 @@ Each active branch entry should include:
 - When a verification run closes or updates an audit finding, cross-reference the matching audit record entry and the chat or commit that performed the work.
 
 ## Test Evidence Log
+- date: 2026-04-11
+  command(s): `bash -n scripts/foreman-status.sh`; `bash -n scripts/foreman-merge-check.sh`
+  result: pass — both scripts are syntax-valid; `foreman-status.sh` renders the current branch governance state without failing, and `foreman-merge-check.sh` exits `1` with the expected not-ready reasons on this branch because the newest commit still has `Reviewed-By: none-yet`
+  log/PR reference: local verification run on `agent/codex/2026-04-11/enrich-reviewer-prompt`
 - date: 2026-04-11
   command(s): `bash -n scripts/foreman-dispatch.sh`; `bash -n scripts/foreman-close.sh`
   result: pass — both scripts are syntax-valid, and a temp-repo lifecycle proof confirmed that `foreman-dispatch.sh --no-classify` creates the branch and adds an active ledger row while `foreman-close.sh ... merged` moves that row to Closed Branches and deletes the merged branch locally and on `origin`

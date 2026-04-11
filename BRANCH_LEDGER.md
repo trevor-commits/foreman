@@ -12,7 +12,7 @@ Update this file when you open a branch (set status `open`) and when you close i
 
 | Branch | Agent | Date | Task | Merge Condition | Thread | Status | Notes |
 |--------|-------|------|------|-----------------|--------|--------|-------|
-| `agent/codex/2026-04-11/enrich-reviewer-prompt` | codex-gpt-5 | 2026-04-11 | Enrich the reviewer prompt, add review telemetry and calibration, close the `Reviewed-By` gap, and wire branch lifecycle automation into dispatch and close flows. | `bash -n hooks/pre-push`, `bash -n scripts/foreman-dispatch.sh`, and `bash -n scripts/foreman-close.sh` pass; temp lifecycle proof passes; and this branch is reviewed before merge. | `TODO: verify` | `open` | Opened from protected `main` because direct task pushes to `main` are disallowed; branch keeps the governance-hook and lifecycle automation changes isolated while the burn-in instrumentation and branch-ledger workflow land. |
+| `agent/codex/2026-04-11/enrich-reviewer-prompt` | codex-gpt-5 | 2026-04-11 | Enrich the reviewer prompt, add review telemetry and calibration, close the `Reviewed-By` gap, wire branch lifecycle automation into dispatch/close flows, and add operational merge-readiness scripts. | `bash -n hooks/pre-push`, `bash -n scripts/foreman-dispatch.sh`, `bash -n scripts/foreman-close.sh`, `bash -n scripts/foreman-status.sh`, and `bash -n scripts/foreman-merge-check.sh` pass; temp lifecycle proof passes; and this branch is reviewed before merge. | `TODO: verify` | `open` | Opened from protected `main` because direct task pushes to `main` are disallowed; branch keeps the governance-hook, lifecycle automation, and operator-status tooling changes isolated while the burn-in instrumentation and branch-ledger workflow land. |
 
 ---
 
