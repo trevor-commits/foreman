@@ -81,6 +81,7 @@ instead of being left as `none-yet`.
 - `Reviewed-By` is still **warning-only** at commit time — the hook warns but does not block
 - `scripts/foreman-review.py` now returns the reviewer model name that should populate `Reviewed-By`
 - Reviewer `BLOCKER` verdicts are a soft gate in Phase 2 and do not block pushes yet; Phase 2.1 may promote them after two weeks of validated use with no false `BLOCKER`s
+- Set `FOREMAN_HARD_GATE=1` in your environment to enable hard blocking on `BLOCKER` verdicts. Default is soft gate (advisory only). Planned to become the default in Phase 2.1 after the two-week burn-in.
 - Merge conditions (§ 3 below) still require a valid `Reviewed-By`; the gap is at commit time, not merge time
 
 ⚠️ **Cloud agent bypass:** The `commit-msg` hook only fires when git runs on the local machine.

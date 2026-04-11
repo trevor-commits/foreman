@@ -16,6 +16,19 @@ Entry format:
 
 ---
 
+## 2026-04-11 — FOREMAN_HARD_GATE Enables Phase 2.1 Hard-Gate Rollout
+
+**Decision:** Added the `FOREMAN_HARD_GATE` environment flag to the `pre-push` hook so a reviewer `BLOCKER` verdict can be promoted to a hard gate without editing hook code.
+
+**Why:** This allows gradual per-machine rollout and easy testing without committing to a hard gate system-wide before the two-week burn-in is confirmed.
+
+**Alternatives Considered:** Hard-coding the hook to block every `BLOCKER` immediately (rejected: too aggressive before the burn-in is complete). Leaving the hook permanently advisory until a later code edit (rejected: makes rollout and testing slower than necessary).
+
+**Agent:** codex-gpt-5
+**Context:** 2026-04-11 Phase 2.1 hook rollout
+
+---
+
 ## 2026-04-10 — OpenHands and MCP as Candidate Replacements for Phases 3–4
 
 **Decision:** Defer a final architecture decision on Phases 3 (Dagger container isolation) and 4 (OpenClaw orchestration), pending evaluation of OpenHands as a combined replacement for both. MCP tool wrapping is identified as the preferred long-term interface boundary regardless of which execution backend wins.

@@ -8,7 +8,8 @@
 # Smart detection: looks for Python (pytest, ruff, mypy), Node (npm test/lint/build),
 # and Makefile targets. Skips checks cleanly if those tools aren't present.
 #
-# Gate failure blocks the push. The Phase 2 reviewer is advisory for now.
+# Gate failure blocks the push. Reviewer BLOCKER verdicts stay advisory unless
+# FOREMAN_HARD_GATE=1 is set in the environment.
 # To bypass in a genuine emergency: git push --no-verify
 # Install: hooks/install.sh copies this to .git/hooks/pre-push and chmod +x
 # =============================================================================
@@ -147,8 +148,9 @@ if [ "$REAL_GATES" -eq 0 ]; then
   echo ""
 fi
 
-# ── Phase 2 reviewer (soft gate) ──────────────────────────────────────────────
+# ── Phase 2 reviewer (soft gate by default) ───────────────────────────────────
 REVIEWER_SCRIPT="$(git rev-parse --show-toplevel)/scripts/foreman-review.py"
+REVIEW_JSON_PATH="$(git rev-parse --show-toplevel)/.agent-runs/last-review.json"
 
 if ! REVIEW_DIFF="$(git diff main...HEAD 2>/dev/null)"; then
   echo "Reviewer: skipped (unable to diff against main)"
@@ -176,7 +178,14 @@ else
   printf '%s\n' "$REVIEWER_OUTPUT"
 
   if [ "$REVIEWER_EXIT" -eq 1 ]; then
-    echo "REVIEWER VERDICT: BLOCKER — soft gate active, push proceeding. Promote to hard gate after two weeks of validated use."
+    if [[ "${FOREMAN_HARD_GATE:-}" == "1" ]]; then
+      echo "REVIEWER VERDICT: BLOCKER — hard gate active, push blocked."
+      echo "Full review: $REVIEW_JSON_PATH"
+      echo ""
+      exit 1
+    fi
+    echo "REVIEWER VERDICT: BLOCKER — soft gate active, push proceeding. Set FOREMAN_HARD_GATE=1 in your shell to promote BLOCKER to a hard gate."
+    echo "Full review: $REVIEW_JSON_PATH"
   elif [ "$REVIEWER_EXIT" -ne 0 ]; then
     echo "Reviewer: warning review script exited with status $REVIEWER_EXIT; push proceeding."
   fi
