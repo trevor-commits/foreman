@@ -283,3 +283,39 @@ Record outside feedback and the resulting reasoning once, then update the same e
   - `implementation/disposition chat`
   - `linked branch / audit / suggestion / test evidence`
 - Reuse or update an existing entry when the same feedback thread comes back instead of opening duplicate records.
+
+## Linear Issue Ledger
+If it's not here, it isn't remembered.
+Mirror every live Linear issue here with the repo-side home that explains why it exists.
+- Each entry should capture:
+  - `issue`
+  - `status`
+  - `todo home`
+  - `why this exists`
+  - `origin source`
+  - `last synced`
+- If this repo is intentionally `repo-only` or no live Linear surface exists yet, keep an explicit note here instead of leaving the section absent.
+- No live issue entries recorded yet.
+
+## Work Record Log
+If it's not here, it isn't remembered.
+Use one entry per bounded task, fix, audit, or review that would otherwise lose reasoning between chats.
+
+```md
+### YYYY-MM-DD — short title
+- Problem:
+- Reasoning:
+- Diagnosis inputs:
+- Implementation inputs:
+- Fix:
+- Self-audit:
+  - method:
+  - outcome:
+  - did not verify:
+- by:
+- triggered by:
+- led to:
+- linear:
+```
+
+- No work records recorded yet.
