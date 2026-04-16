@@ -17,6 +17,8 @@ Capture the current goal plus the concrete dependency-ordered steps that are sti
 
 ## Completed
 Preserve a durable completion trail for verified work instead of deleting it from active planning.
+- [x] 2026-04-16: backfilled the local durable trail for the `GIL-37` repo-principles rollout so this repo now records why the shared Continuity / Coherence / Linear-Core surfaces landed here instead of leaving that explanation only in the coordinating repo.
+
 - Completed 2026-04-11: Audited all 10 Phase 2.1+ deliverables, fixed the invalid `test-foreman-tooling.yml` YAML, moved the real FastMCP server implementation into `scripts/foreman-mcp-server.py`, and simplified smoke checks to import the executable script directly | priority: P1 | owner: Trevor Gillette | target date: 2026-04-11
 - Completed 2026-04-11: Added `scripts/foreman-pr-prep.sh`, which reads the current branch governance state and prints a PR description pre-filled from commit trailers, last-review data, the task brief, and `BRANCH_LEDGER.md` | priority: P1 | owner: Trevor Gillette | target date: 2026-04-11
 - Completed 2026-04-11: Installed `anthropic` and `openai` into the local Python 3.14 environment and completed live classifier, Claude-fallback reviewer, Anthropic Sonnet reviewer, and OpenAI reviewer validation against trivial README diffs | priority: P1 | owner: Trevor Gillette | target date: 2026-04-11
@@ -295,7 +297,7 @@ Mirror every live Linear issue here with the repo-side home that explains why it
   - `origin source`
   - `last synced`
 - If this repo is intentionally `repo-only` or no live Linear surface exists yet, keep an explicit note here instead of leaving the section absent.
-- No live issue entries recorded yet.
+- `GIL-37` | status: `Building` | todo home: `Work Record Log` 2026-04-16 (local durable-record backfill for the portfolio repo-principles rollout) | why this exists: preserve a repo-local pointer explaining why the shared Continuity / Coherence / Linear-Core surfaces landed here instead of leaving that reasoning only in the coordinating repo | origin source: Trevor portfolio-baseline rollout request on 2026-04-16, tracked centrally in `/Users/gillettes/Coding Projects/Autonomous Coding Agent` under `GIL-37` | last synced: `2026-04-16`
 
 ## Work Record Log
 If it's not here, it isn't remembered.
@@ -318,4 +320,19 @@ Use one entry per bounded task, fix, audit, or review that would otherwise lose 
 - linear:
 ```
 
-- No work records recorded yet.
+### 2026-04-16 — local GIL-37 rollout record
+- Problem: This repo had the shared Continuity / Coherence / Linear-Core baseline on disk, but its local durable record was still blank: `todo.md` had the new `Work Record Log` and `Linear Issue Ledger` sections with no repo-local pointer explaining why those surfaces landed here.
+- Reasoning: The coordinating repo keeps the portfolio-wide reasoning, but this repo still needs a local durable pointer so future readers can understand why the principle docs, Claude entrypoint, Linear contract, and AGENTS overlay changed here without hunting through another repo or relying on chat history.
+- Diagnosis inputs: direct read of this repo's `todo.md` showing empty rollout-tracking sections; direct read of local `AGENTS.project.md`, `CONTINUITY.md`, `COHERENCE.md`, `CLAUDE.md`, and `LINEAR.md`; coordinating audit trail in `/Users/gillettes/Coding Projects/Autonomous Coding Agent` `todo.md` for `GIL-37`.
+- Implementation inputs: this repo's `todo.md` only.
+- Fix: Added a local `Linear Issue Ledger` pointer for `GIL-37`, appended this Work Record, and added a `Completed` summary so the repo-principles rollout now has a durable local home in this repo instead of living only in the coordinating repo.
+- Self-audit:
+  - method: reread `todo.md` sections `Linear Issue Ledger`, `Completed`, and `Work Record Log` after edit.
+  - outcome: pass — the coordinating rollout issue, the durable narrative, and the local landing summary now all exist in this repo.
+  - method: `git diff --check`
+  - outcome: pending at repo closeout.
+  - did not verify: repo-specific runtime behavior because this repair only backfills governance records for already-landed principle surfaces.
+- by: Codex
+- triggered by: 2026-04-16 portfolio rollout full-audit in `/Users/gillettes/Coding Projects/Autonomous Coding Agent`
+- led to: local durable-record backfill for the already-landed repo-principles rollout; coordinating issue `GIL-37`
+- linear: GIL-37
