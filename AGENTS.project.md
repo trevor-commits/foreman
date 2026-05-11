@@ -293,3 +293,7 @@ Note: both hooks are **local only**. They do not fire for agents that commit fro
 - Continuity gate: Work Record exists, Self-audit is honest, and unverified scope is named explicitly.
 - Coherence gate: Ripple Check runs before commit or state move, and dependent docs drift together or not at all.
 - Linear-Core gate: actionable work is issue-backed or explicitly dispositioned, and the repo-side ledger stays current.
+
+## Coder Craft Evidence Gate
+
+- For meaningful AI-assisted implementation, debugging, code review, unfamiliar API/citation work, or AI-only-operator handoffs, load `/Users/gillettes/.codex/policies/CODER_CRAFT_FORCING_FUNCTIONS.md` and scale the evidence to blast radius.
