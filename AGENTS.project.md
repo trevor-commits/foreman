@@ -188,7 +188,8 @@ The agent MUST stop and surface a question if:
 **Read only what the task requires. Every file you read costs context — don't read files you won't use.**
 
 ### Required for every session (no exceptions)
-- `CLAUDE.md` — current state, open branches, gotchas, stack
+- `AGENTS.project.md` (this file) — current state, open branches, gotchas, stack.
+  `CLAUDE.md` is now a thin shim that routes here; it no longer carries state.
 
 ### Read only for governance / audit / architectural work
 - `DECISIONS.md` — only when making or reviewing architectural decisions
@@ -204,13 +205,13 @@ The agent MUST stop and surface a question if:
 
 | Task type | Read these — nothing more |
 |-----------|--------------------------|
-| Coding / feature / bug fix | `CLAUDE.md` + files being changed |
-| Governance / audit / phase planning | `CLAUDE.md` + `AGENTS.md` + `DECISIONS.md` + `OPEN_QUESTIONS.md` + `BRANCH_LEDGER.md` |
-| Hook or script modification | `CLAUDE.md` + `AGENTS.md` + the specific file being changed |
-| Quick cleanup / docs fix | `CLAUDE.md` only |
-| New task on an unfamiliar repo | `CLAUDE.md` + `AGENTS.md` |
+| Coding / feature / bug fix | `AGENTS.project.md` + files being changed |
+| Governance / audit / phase planning | `AGENTS.project.md` + `AGENTS.md` + `DECISIONS.md` + `OPEN_QUESTIONS.md` + `BRANCH_LEDGER.md` |
+| Hook or script modification | `AGENTS.project.md` + `AGENTS.md` + the specific file being changed |
+| Quick cleanup / docs fix | `AGENTS.project.md` only |
+| New task on an unfamiliar repo | `AGENTS.project.md` + `AGENTS.md` |
 
-`CLAUDE.md` is maintained specifically so it is the single file an agent needs to orient itself. If `CLAUDE.md` doesn't have enough context for a task, the right fix is to improve `CLAUDE.md` — not to add more mandatory reads.
+`AGENTS.project.md` is maintained specifically so it is the single file an agent needs to orient itself. If it doesn't have enough context for a task, the right fix is to improve this file — not to add more mandatory reads, and not to move state back into `CLAUDE.md`.
 
 After any significant decision, append an entry to `DECISIONS.md`.
 After starting a new task, add a row to `BRANCH_LEDGER.md`.
@@ -250,6 +251,132 @@ Run `hooks/install.sh` once after cloning this template into a new project.
 - `pre-push` — heuristic gate: warns on non-compliant branch names by default (`FOREMAN_STRICT_BRANCH=1` makes that blocking), autodetects Python (pytest, ruff, optional mypy), Node (npm test/lint/build), or Makefile; reports all results; blocks on any failure; blocks direct push to `main`, `master`, `production`, `prod`; then runs the Phase 2 reviewer as a soft gate (`FOREMAN_HARD_GATE=1` makes `BLOCKER` verdicts blocking) using `main...HEAD` with fallback to `origin/main...HEAD`
 
 Note: both hooks are **local only**. They do not fire for agents that commit from a remote sandbox.
+
+---
+
+## 10. Claude Operating Rules (merged from CLAUDE.md)
+
+These apply in every session, automatically, without being asked.
+
+**Don't implement code.** Claude is the auditor, planner, and reviewer. Codex is the implementer. When work needs to be done, generate a Codex prompt — don't write the code directly.
+
+**Auto-generate Codex prompts.** When any implementation work is identified, produce a Codex prompt automatically. Don't wait to be asked.
+
+(Terseness and read-only-what-you-need are already covered in § 0 and § 7 above.)
+
+---
+
+## 11. Project Overview (merged from CLAUDE.md)
+
+Foreman is a convention and tooling template for AI-assisted coding. It gives AI agents
+(Codex, Claude Code, Cursor, etc.) branch provenance, commit traceability, external
+verification gates, and a foundation for cross-model review — without requiring a
+full orchestration platform before it's needed.
+
+It is Trevor's personal template. New projects clone or copy from it.
+
+### Owner
+
+Trevor Gillette — trevorgillette17@gmail.com
+
+### Stack
+
+This repo: shell scripts, Markdown. Language-agnostic — the conventions apply to any stack.
+
+### Key Files
+
+| File | What it is |
+|------|-----------|
+| `AGENTS.md` | Rules every AI agent must read before touching any repo |
+| `BRANCH_LEDGER.md` | The canonical record of every open agent branch |
+| `DECISIONS.md` | Architectural decisions and their reasoning |
+| `memory/` | Durable knowledge: projects, people, context |
+| `hooks/` | Git hooks for commit enforcement and pre-push gates |
+| `.github/PULL_REQUEST_TEMPLATE.md` | PR template with agent metadata |
+
+---
+
+## 12. Current Phase (merged from CLAUDE.md)
+
+**Phase 2.1** — Phase 2 governance is live, the reviewer still defaults to a soft gate,
+the optional Haiku classifier is implemented, branch-name warnings now exist in `pre-push`,
+and the remaining work is live validation plus deciding which soft gates should become defaults.
+
+Phase 2.1 work still to finish:
+- default hard-gate promotion decision after the burn-in window
+- hosted GitHub Actions trailer-check validation from real PRs
+- commit-time `Reviewed-By` promotion decision
+
+Later phases:
+- Phase 3: Dagger Container Use (isolation for parallel agents), unless the OpenHands evaluation replaces it
+- Phase 4: OpenClaw orchestration (if still needed after Phase 3)
+
+---
+
+## 13. Handoff Summary (merged from CLAUDE.md, last updated 2026-04-11)
+
+Completed through 2026-04-11 and present on disk on `main`:
+- Phase 1.5 landed in `foreman`, `Taxes`, and `bible-ai`
+- `.github/workflows/foreman-trailer-check.yml` now enforces required trailers on pushes/PRs to `main`
+- `.agent-runs/` is now documented as optional scratch space; commit trailers are the durable audit artifact
+- `scripts/foreman-dispatch.sh` exists as the minimum shell dispatcher scaffold
+- `PROJECT_INTENT.md` is now filled with the actual Phase 1 through Phase 2.1 purpose, scope, and constraints
+- downstream governance-doc sync is intentionally manual for now; downstream copies stay repo-local until drift costs justify automation
+- Phase 2 reviewer automation is now implemented via `scripts/foreman-review.py`
+- `hooks/pre-push` now runs the reviewer after the existing gates and reports `APPROVE` / `REQUEST_CHANGES` / `BLOCKER` as a soft gate
+- `scripts/foreman-dispatch.sh` now prints the exact post-run reviewer command for the author to run manually
+- `scripts/foreman-classify.py` now provides an optional Haiku task classifier for `scripts/foreman-dispatch.sh`, with upward routing on low confidence and `--no-classify` for bypass/testing
+- `FOREMAN_HARD_GATE=1` now promotes reviewer `BLOCKER` verdicts to a hard gate without editing the hook
+- `FOREMAN_STRICT_BRANCH=1` now promotes non-compliant branch-name warnings to a hard gate without editing the hook
+- `docs/mcp-tools.md` and `scripts/foreman-mcp-shim.py` now define a proof-of-concept MCP boundary for the existing governance operations
+- `scripts/foreman-mcp-server.py` now exposes all 6 governance tools as a real FastMCP server compatible with Claude Code's MCP client. Connect via: `claude mcp add foreman python3 scripts/foreman-mcp-server.py`. Requires: `pip3 install mcp --break-system-packages`
+- local Python 3.14 now has `anthropic` and `openai` installed, and the live classifier, Claude-fallback reviewer path, Anthropic Sonnet reviewer path, and OpenAI reviewer path have all been exercised successfully
+
+Skipped or caveated:
+- `Reviewed-By` remains warning-only at commit time even though the reviewer now returns a concrete `reviewer_model`
+- downstream governance-doc copies can still drift between sync passes because manual mirroring was kept by design
+- hard-gating reviewer `BLOCKER`s is deferred to Phase 2.1 pending two weeks of use with no false `BLOCKER`s
+- hosted GitHub Actions trailer-check validation is still pending from a real pass/fail PR pair
+
+Planned for next session:
+- validate whether reviewer `BLOCKER`s are accurate enough to promote to a hard gate after two weeks of use
+- push a correctly tagged test PR and a missing-trailer test PR to confirm `foreman-trailer-check.yml` passes/fails on GitHub's hosted runner
+- decide whether commit-time `Reviewed-By` should stay warning-only or follow the Phase 2.1 hard-gate path later
+
+---
+
+## 14. Recent Decisions (merged from CLAUDE.md)
+
+See DECISIONS.md for full history.
+
+- **2026-04-09** — Commit trailers plus tracked repo files are the durable audit trail;
+  `.agent-runs/` is scratch space only.
+- **2026-04-10** — Downstream governance docs remain manually mirrored at current scale;
+  accept limited drift rather than adding sync machinery now.
+- **2026-04-10** — Phase 2 review automation uses Python, runs as a soft gate first,
+  and defers the Haiku classifier to Phase 2.1.
+- **2026-04-11** — Phase 2.1 adds an optional Haiku classifier with upward routing on
+  low confidence and a `--no-classify` bypass for dispatch testing or cost control.
+- **2026-04-09** — Phase 1.5 server-side trailer enforcement is now active in `foreman`,
+  `Taxes`, and `bible-ai`.
+- **2026-04-09** — Adopted Codex's phased approach to avoid overbuilding: branch ledger
+  and hooks first, cross-model reviewer second, Container Use third, OpenClaw last.
+- **2026-04-09** — Branch ledger (BRANCH_LEDGER.md) is the durable source of truth for
+  open branches, not chat thread IDs. Chat links are metadata attached to the ledger.
+- **2026-04-09** — Haiku 4.5 is the dispatcher model for cheap tasks; Sonnet 4.6 for
+  standard work; Opus 4.6 for architecture and hard problems. Reviewer is always a
+  different model than the one that wrote the code.
+
+---
+
+## 15. Additional Gotchas (merged from CLAUDE.md; net-new beyond §§ 1–2, 9 above)
+
+- The pre-push gate is heuristic autodetection (pytest/ruff/mypy, npm, or make). It may run nothing if no test runner is found. It is not a guaranteed full-stack gate.
+- The pre-push hook resolves its review diff base from local `main` first, then `origin/main`, and skips reviewer execution only if neither ref exists, `python3` is unavailable, or the review script is missing.
+- The pre-push hook automatically amends the last commit's `Reviewed-By` trailer when the reviewer runs successfully, then stops that push so the next `git push` sends the amended SHA. If you push with `--no-verify`, `Reviewed-By` stays `none-yet`.
+- `scripts/foreman-review.py` skips live review if the required API key or SDK package is missing and writes `.agent-runs/last-review.json` whenever it can persist a review payload locally.
+- Live reviewer and classifier paths require `anthropic` and `openai` packages. Install via `pip3 install -r scripts/requirements.txt --break-system-packages`. Without them, the reviewer silently skips and the classifier defaults to `standard`.
+- The FastMCP server (`scripts/foreman-mcp-server.py`) requires the `mcp` package. Install via `pip3 install -r scripts/requirements.txt --break-system-packages`. Without it, the server file compiles but cannot run.
 
 ## Global Mandatory Markers
 - [MANDATORY_STACK_RUNTIME] stack/runtime profile, risk areas, release gates, boundaries, rollback/ops checks
