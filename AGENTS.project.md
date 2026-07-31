@@ -188,8 +188,15 @@ The agent MUST stop and surface a question if:
 **Read only what the task requires. Every file you read costs context — don't read files you won't use.**
 
 ### Required for every session (no exceptions)
-- `AGENTS.project.md` (this file) — current state, open branches, gotchas, stack.
-  `CLAUDE.md` is now a thin shim that routes here; it no longer carries state.
+Follow root `AGENTS.md`'s Required Read Order — it is the entry contract, and this
+file does not replace it:
+- the global agent baseline, when this machine has one
+- `AGENTS.project.md` (this file) — current state, open branches, gotchas, stack, and
+  the primary orientation document. `CLAUDE.md` is now a thin shim that routes here;
+  it no longer carries state.
+- `PROJECT_INTENT.md` and `todo.md` when present
+- `CONTINUITY.md`, `COHERENCE.md`, and `LINEAR.md` when present, before planning,
+  audit, or a state move
 
 ### Read only for governance / audit / architectural work
 - `DECISIONS.md` — only when making or reviewing architectural decisions
@@ -206,12 +213,12 @@ The agent MUST stop and surface a question if:
 | Task type | Read these — nothing more |
 |-----------|--------------------------|
 | Coding / feature / bug fix | `AGENTS.project.md` + files being changed |
-| Governance / audit / phase planning | `AGENTS.project.md` + `AGENTS.md` + `DECISIONS.md` + `OPEN_QUESTIONS.md` + `BRANCH_LEDGER.md` |
+| Governance / audit / phase planning | `AGENTS.md` read order + `AGENTS.project.md` + `PROJECT_INTENT.md` + `todo.md` + `DECISIONS.md` + `OPEN_QUESTIONS.md` + `BRANCH_LEDGER.md`, plus `CONTINUITY.md` / `COHERENCE.md` / `LINEAR.md` when present |
 | Hook or script modification | `AGENTS.project.md` + `AGENTS.md` + the specific file being changed |
 | Quick cleanup / docs fix | `AGENTS.project.md` only |
 | New task on an unfamiliar repo | `AGENTS.project.md` + `AGENTS.md` |
 
-`AGENTS.project.md` is maintained specifically so it is the single file an agent needs to orient itself. If it doesn't have enough context for a task, the right fix is to improve this file — not to add more mandatory reads, and not to move state back into `CLAUDE.md`.
+`AGENTS.project.md` is maintained as the primary orientation document, read after root `AGENTS.md`'s entry contract rather than instead of it. If it doesn't have enough context for a task, the right fix is to improve this file — not to add more mandatory reads, and not to move state back into `CLAUDE.md`.
 
 After any significant decision, append an entry to `DECISIONS.md`.
 After starting a new task, add a row to `BRANCH_LEDGER.md`.
