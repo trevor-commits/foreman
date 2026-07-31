@@ -1,4 +1,6 @@
 anthropic>=0.94.0
 openai>=2.31.0
 PyYAML>=6.0
-mcp>=1.6.0
+# Pinned below 2.0: mcp 2.0.0 removed `mcp.server.fastmcp`, which
+# scripts/foreman-mcp-server.py imports. Verified working on 1.27.0.
+mcp>=1.6.0,<2
