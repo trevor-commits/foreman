@@ -29,8 +29,9 @@ Foreman fixes all three with files and conventions, not new infrastructure.
 
 | File / Dir | Purpose |
 |-----------|---------|
-| `AGENTS.md` | Rules every AI agent reads before touching any repo |
-| `CLAUDE.md` | Working memory — current project state, open threads, gotchas |
+| `AGENTS.md` | Entry contract every AI agent reads first; defines the required read order |
+| `AGENTS.project.md` | Authoritative repo-local guidance — conventions, current state, open branches, gotchas |
+| `CLAUDE.md` | Routing shim that sends Claude to `AGENTS.md`; carries no project state |
 | `BRANCH_LEDGER.md` | Canonical record of every open agent branch (source of truth) |
 | `DECISIONS.md` | Architectural decisions and their reasoning |
 | `memory/` | Durable knowledge: projects index, people, context |
@@ -58,7 +59,7 @@ git remote set-url origin git@github.com:yourusername/my-new-project.git
 bash hooks/install.sh
 
 # Personalize the files
-# 1. CLAUDE.md     — add project overview, stack, current focus
+# 1. AGENTS.project.md — add project overview, stack, current focus
 # 2. BRANCH_LEDGER.md — clear the placeholder row
 # 3. memory/projects.md — add this project's entry
 # 4. DECISIONS.md  — keep or delete the foreman setup entries
@@ -72,6 +73,7 @@ git push -u origin main
 ```bash
 # From your existing project root, grab just the files you need:
 curl -sO https://raw.githubusercontent.com/trevor-commits/foreman/main/AGENTS.md
+curl -sO https://raw.githubusercontent.com/trevor-commits/foreman/main/AGENTS.project.md
 curl -sO https://raw.githubusercontent.com/trevor-commits/foreman/main/CLAUDE.md
 curl -sO https://raw.githubusercontent.com/trevor-commits/foreman/main/BRANCH_LEDGER.md
 curl -sO https://raw.githubusercontent.com/trevor-commits/foreman/main/DECISIONS.md
