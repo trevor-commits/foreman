@@ -1,5 +1,18 @@
 # Architectural Decisions
 
+## 2026-08-11 — Exact Opus 5 for Claude; independent provider for Claude-authored review
+
+**Decision:** Every active Claude selector in Foreman uses exact `claude-opus-5`. A conflicting Claude selector fails before provider access. When Claude authored the work, Foreman uses OpenAI for independent review and does not fall back to another Claude tier.
+
+**Why:** Trevor made Opus 5 the global Claude standard. Lower Claude tiers violate that rule, and another invocation of the same Claude model is not an independent model-family review.
+
+**Alternatives Considered:** silently rewriting old selectors (rejected because configuration drift should be visible); using Opus 5 to review Opus 5 work (rejected as same-family review); skipping direct SDK guards and relying only on the public CLI wrapper (rejected because Foreman calls Anthropic directly).
+
+**Agent:** Codex GPT-5.6
+**Context:** Global ER-930, Codex thread `019ff1e7-a4f1-7841-a6b7-99c783643ff5`.
+
+---
+
 A running log of non-trivial decisions and the reasoning behind them.
 Add new entries at the top. One entry per decision. Be concise but complete —
 future agents and humans need to understand the "why," not just the "what."

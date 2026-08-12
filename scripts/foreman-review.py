@@ -15,19 +15,10 @@ from pathlib import Path
 from typing import Any
 
 
-# Keep Anthropic model identifiers aligned with the canonical routing names in CLAUDE.md.
+# Every Anthropic request uses exact Opus 5 under global ER-930.
 OPENAI_REVIEW_MODEL = "o4-mini"
-CLAUDE_HAIKU_MODEL = "claude-haiku-4-5-20251001"
-CLAUDE_SONNET_MODEL = "claude-sonnet-4-6"
-CLAUDE_OPUS_MODEL = "claude-opus-4-6"
-CLAUDE_REVIEW_MODEL = os.getenv("FOREMAN_ANTHROPIC_REVIEW_MODEL", CLAUDE_SONNET_MODEL)
-# If a Claude-authored diff needs review but OPENAI_API_KEY is not configured, fall back to
-# a second Claude model rather than skipping immediately. This keeps cross-model review
-# working in Anthropic-only setups until the OpenAI path is validated more broadly.
-CLAUDE_FALLBACK_MODEL = os.getenv(
-    "FOREMAN_ANTHROPIC_FALLBACK_MODEL",
-    CLAUDE_HAIKU_MODEL,
-)
+CLAUDE_OPUS_MODEL = "claude-opus-5"
+CLAUDE_REVIEW_MODEL = CLAUDE_OPUS_MODEL
 VALID_VERDICTS = {"APPROVE", "REQUEST_CHANGES", "BLOCKER"}
 VALID_SEVERITIES = {"info", "warning", "blocking"}
 
@@ -79,9 +70,7 @@ def resolve_reviewer(author_model: str) -> tuple[str, str]:
     author_lower = author_model.lower()
 
     if "claude" in author_lower:
-        if os.getenv("OPENAI_API_KEY"):
-            return "openai", OPENAI_REVIEW_MODEL
-        return "anthropic", CLAUDE_FALLBACK_MODEL
+        return "openai", OPENAI_REVIEW_MODEL
 
     if "codex" in author_lower or "gpt" in author_lower:
         return "anthropic", CLAUDE_REVIEW_MODEL
@@ -111,7 +100,7 @@ Foreman governance context:
     Thread: https://...
     Task: Add Stripe webhook handler
     Verified-By: pytest, ruff
-    Reviewed-By: claude-sonnet-4-6
+    Reviewed-By: claude-opus-5
 - BRANCH NAMING CONVENTION
   Branches should match: ^(agent|review)/[a-z0-9_-]+/[0-9]{4}-[0-9]{2}-[0-9]{2}/[a-z0-9-]+$
   A diff on a branch that does not match this pattern should be flagged as a warning / REQUEST_CHANGES, not a BLOCKER, unless the branch is a protected branch name: main, master, production, prod.
@@ -179,6 +168,10 @@ def call_openai(prompt: str, model: str) -> tuple[str, str]:
 
 
 def call_anthropic(prompt: str, model: str) -> tuple[str, str]:
+    if model != CLAUDE_OPUS_MODEL:
+        raise ReviewError(
+            f"Only {CLAUDE_OPUS_MODEL} is allowed for Anthropic review (got {model})."
+        )
     if not os.getenv("ANTHROPIC_API_KEY"):
         raise MissingKeyError("ANTHROPIC_API_KEY is not set.")
 
@@ -228,7 +221,7 @@ def run_inline_assertions() -> None:
         "verdict": "APPROVE",
         "summary": "Empty diff — nothing to review",
         "issues": [],
-        "reviewer_model": "claude-sonnet-4-6",
+        "reviewer_model": "claude-opus-5",
     }
     encoded = json.dumps(sample)
     fenced = f"```json\n{encoded}\n```"
@@ -236,7 +229,7 @@ def run_inline_assertions() -> None:
 
     assert extract_json_object(encoded)["verdict"] == "APPROVE"
     assert extract_json_object(fenced)["summary"] == "Empty diff — nothing to review"
-    assert extract_json_object(wrapped)["reviewer_model"] == "claude-sonnet-4-6"
+    assert extract_json_object(wrapped)["reviewer_model"] == "claude-opus-5"
 
 
 def validate_review(review: dict[str, Any], actual_model: str) -> dict[str, Any]:

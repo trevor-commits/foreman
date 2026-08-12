@@ -44,7 +44,7 @@ Trevor Gillette — trevorgillette17@gmail.com
 ## Current Phase
 
 **Phase 2.1** — Phase 2 governance is live, the reviewer still defaults to a soft gate,
-the optional Haiku classifier is implemented, branch-name warnings now exist in `pre-push`,
+the optional Opus 5 classifier is implemented, branch-name warnings now exist in `pre-push`,
 and the remaining work is live validation plus deciding which soft gates should become defaults.
 
 Phase 2.1 work still to finish:

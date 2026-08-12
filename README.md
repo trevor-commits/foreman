@@ -93,7 +93,7 @@ bash hooks/install.sh
 Every commit must include these trailers after a blank line:
 
 ```
-Agent: claude-sonnet-4-6
+Agent: claude-opus-5
 Thread: https://...session-url...
 Task: Add Stripe webhook handler with signature verification
 Verified-By: pytest, ruff, mypy
@@ -129,12 +129,12 @@ It also warns on non-compliant branch names by default; `FOREMAN_STRICT_BRANCH=1
 
 | Task type | Model | Reasoning level |
 |-----------|-------|-----------------|
-| Standard feature work, refactors, writing tests | Sonnet 4.6 | medium |
-| Architecture, hard debugging, ambiguous requirements | Opus 4.6 | high |
-| Reviewing another model's output | **Different model than author** | medium |
+| Standard feature work, refactors, writing tests | Claude Opus 5 | medium |
+| Architecture, hard debugging, ambiguous requirements | Claude Opus 5 | high |
+| Reviewing another provider's output | Claude Opus 5 | medium/high |
 
-Phase 2.1 keeps Sonnet as the default implementation tier, adds an optional Haiku classifier
-for dispatch routing, and still requires the reviewer to be a different model than the author.
+Phase 2.1 uses exact `claude-opus-5` for every Claude request. The optional classifier changes
+route labels and reasoning only; Claude-authored work requires an independent provider for cross-model review.
 
 ---
 
@@ -193,7 +193,7 @@ overbuilding before you understand your actual failure modes.
 - `BLOCKER` is advisory by default; `FOREMAN_HARD_GATE=1` promotes it to a hard gate while verdict quality is validated in real use
 
 **Phase 2.1 — Routing + rollout controls** ✅ *partially implemented*
-- `scripts/foreman-classify.py` adds an optional Haiku classifier for dispatch routing
+- `scripts/foreman-classify.py` adds an optional Opus 5 classifier for dispatch routing
 - `hooks/pre-push` now warns on non-compliant branch names by default; `FOREMAN_STRICT_BRANCH=1` makes that blocking
 - live API-path validation and any default promotion decisions remain open follow-up work
 

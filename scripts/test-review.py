@@ -51,27 +51,37 @@ def test_empty_diff_review() -> None:
     os.environ.pop("OPENAI_API_KEY", None)
     provider, reviewer_model = module.resolve_reviewer("codex-5.3")
     assert provider == "anthropic", provider
-    assert reviewer_model == "claude-sonnet-4-6", reviewer_model
+    assert reviewer_model == "claude-opus-5", reviewer_model
 
     review = module.empty_diff_review(reviewer_model)
     assert review["verdict"] == "APPROVE", review
     assert review["summary"] == "Empty diff — nothing to review", review
     assert review["issues"] == [], review
-    assert review["reviewer_model"] == "claude-sonnet-4-6", review
+    assert review["reviewer_model"] == "claude-opus-5", review
 
 
 def test_codex_route_without_openai_key() -> None:
     os.environ.pop("OPENAI_API_KEY", None)
     provider, reviewer_model = module.resolve_reviewer("codex-5.3")
     assert provider == "anthropic", provider
-    assert reviewer_model == "claude-sonnet-4-6", reviewer_model
+    assert reviewer_model == "claude-opus-5", reviewer_model
 
 
 def test_claude_route_without_openai_key() -> None:
     os.environ.pop("OPENAI_API_KEY", None)
-    provider, reviewer_model = module.resolve_reviewer("claude-sonnet-4-6")
-    assert provider == "anthropic", provider
-    assert reviewer_model == "claude-haiku-4-5-20251001", reviewer_model
+    provider, reviewer_model = module.resolve_reviewer("claude-opus-5")
+    assert provider == "openai", provider
+    assert reviewer_model == "o4-mini", reviewer_model
+
+
+def test_anthropic_rejects_non_opus5_before_credentials() -> None:
+    os.environ.pop("ANTHROPIC_API_KEY", None)
+    try:
+        module.call_anthropic("review", "claude-sonnet-4-6")
+    except module.ReviewError as exc:
+        assert "Only claude-opus-5 is allowed" in str(exc), exc
+    else:
+        raise AssertionError("non-Opus 5 Anthropic model was accepted")
 
 
 def test_extract_json_from_fence() -> None:
@@ -115,7 +125,7 @@ def test_validate_review_accepts_valid_review_with_reviewer_model() -> None:
         "verdict": "APPROVE",
         "summary": "looks good",
         "issues": [],
-        "reviewer_model": "claude-sonnet-4-6",
+        "reviewer_model": "claude-opus-5",
     }
     result = module.validate_review(good_review, "o4-mini")
     assert result["verdict"] == "APPROVE", result
@@ -129,7 +139,7 @@ def test_validate_review_rejects_issue_missing_note() -> None:
         "verdict": "REQUEST_CHANGES",
         "summary": "missing note",
         "issues": [{"severity": "warning", "location": "foo.py:1"}],
-        "reviewer_model": "claude-sonnet-4-6",
+        "reviewer_model": "claude-opus-5",
     }
     try:
         module.validate_review(bad_review, "test-model")
@@ -146,7 +156,7 @@ def test_append_telemetry_writes_jsonl_record() -> None:
             {"severity": "warning", "location": "general", "note": "Rename the branch"},
             {"severity": "blocking", "location": "general", "note": "Do not self-review"},
         ],
-        "reviewer_model": "claude-sonnet-4-6",
+        "reviewer_model": "claude-opus-5",
     }
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_path = Path(tmp_dir)
@@ -168,7 +178,7 @@ def test_append_telemetry_writes_jsonl_record() -> None:
         record = json.loads(payload)
         assert record["branch"] == "agent/codex/2026-04-11/test-telemetry", record
         assert record["author_model"] == "codex-5.3", record
-        assert record["reviewer_model"] == "claude-sonnet-4-6", record
+        assert record["reviewer_model"] == "claude-opus-5", record
         assert record["provider"] == "anthropic", record
         assert record["verdict"] == "REQUEST_CHANGES", record
         assert record["issue_count"] == 2, record
@@ -197,8 +207,9 @@ def test_mcp_foreman_review_empty_diff_returns_approve() -> None:
 def main() -> int:
     tests = [
         ("empty diff returns APPROVE without an API call", test_empty_diff_review),
-        ("codex author routes to anthropic sonnet", test_codex_route_without_openai_key),
-        ("claude author without OPENAI_API_KEY routes to anthropic haiku", test_claude_route_without_openai_key),
+        ("codex author routes to Anthropic Opus 5", test_codex_route_without_openai_key),
+        ("Claude author routes to independent OpenAI review", test_claude_route_without_openai_key),
+        ("Anthropic rejects non-Opus 5 before credentials", test_anthropic_rejects_non_opus5_before_credentials),
         ("extract_json_object parses markdown-fenced JSON", test_extract_json_from_fence),
         ("extract_json_object parses bare JSON", test_extract_json_from_bare_string),
         ("validate_review rejects missing verdict", test_validate_review_missing_verdict),

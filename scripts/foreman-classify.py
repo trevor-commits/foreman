@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 
 
-CLASSIFIER_MODEL = "claude-haiku-4-5-20251001"
+CLASSIFIER_MODEL = "claude-opus-5"
 VALID_ROUTES = {"cheap", "standard", "escalation"}
 UPWARD_ROUTE = {
     "cheap": "standard",

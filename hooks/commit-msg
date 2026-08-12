@@ -4,7 +4,7 @@
 # Enforces the foreman commit trailer schema on every non-merge commit.
 #
 # Required trailers (after a blank line at the end of the commit message):
-#   Agent:       which tool and model wrote this (e.g. codex-5.3, claude-sonnet-4-6)
+#   Agent:       which tool and model wrote this (e.g. codex-5.3, claude-opus-5)
 #   Thread:      session/thread ID or URL that spawned this task
 #   Task:        one-line description of the actual ask
 #   Verified-By: comma-separated list of checks that ran (pytest, ruff, build, etc.)
@@ -66,7 +66,7 @@ if [ ${#MISSING[@]} -gt 0 ]; then
   echo ""
   echo "    Add these trailers after a blank line at the end of your message:"
   echo ""
-  echo "        Agent: <tool-model, e.g. codex-5.3 or claude-sonnet-4-6>"
+  echo "        Agent: <tool-model, e.g. codex-5.3 or claude-opus-5>"
   echo "        Thread: <session/thread ID or URL, or 'cowork' if from Cowork>"
   echo "        Task: <one-line description of the actual ask>"
   echo "        Verified-By: <checks that ran: pytest, ruff, mypy, build, manual, etc.>"

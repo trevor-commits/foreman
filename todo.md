@@ -128,6 +128,10 @@ Each active branch entry should include:
 - When a verification run closes or updates an audit finding, cross-reference the matching audit record entry and the chat or commit that performed the work.
 
 ## Test Evidence Log
+- date: 2026-08-11
+  command(s): `python3 scripts/test-review.py`; `python3 -m py_compile scripts/foreman-review.py scripts/foreman-classify.py`; `bash -n scripts/foreman-dispatch.sh hooks/commit-msg`; Global Implementations `scripts/claude-opus5-active-selectors.test.sh` against the isolated rollout worktrees
+  result: pass — reviewer routing uses exact `claude-opus-5`, rejects earlier Anthropic selectors before credentials, preserves independent OpenAI review for Claude-authored work, and the fleet selector audit reports 3 passed / 0 failed
+  log/PR reference: branch `codex/er930-opus5-only`; global ER-930
 - date: 2026-04-11
   command(s): `bash scripts/foreman-drift-check.sh --repos '/Users/gillettes/Coding Projects/Taxes /Users/gillettes/Coding Projects/bible-ai'`; `python3 scripts/test-review.py`; `bash scripts/test-hooks.sh`; `bash -n hooks/pre-push`; `python3 -m py_compile scripts/foreman-mcp-server.py`; `python3 -m py_compile scripts/foreman-calibration.py`
   result: pass — downstream recheck reports 14 files in sync with 0 missing and 0 drifted across `Taxes` and `bible-ai`, and the full local verification block exits 0 after the MCP skip-guard change
@@ -285,6 +289,7 @@ Record outside feedback and the resulting reasoning once, then update the same e
   - `implementation/disposition chat`
   - `linked branch / audit / suggestion / test evidence`
 - Reuse or update an existing entry when the same feedback thread comes back instead of opening duplicate records.
+- 2026-08-11 | feedback source: Trevor, Codex thread `019ff1e7-a4f1-7841-a6b7-99c783643ff5` | feedback summary: all Claude execution should use Opus 5 globally | reasoning response: accepted for active execution paths; pin the exact public selector, remove same-provider lower-tier fallbacks, and retain independent review by routing Claude-authored work to OpenAI | decision status: accepted / implemented on `codex/er930-opus5-only` | linked evidence: Work Record `2026-08-11 — exact Claude Opus 5 routing`; Test Evidence above; global ER-930
 
 ## Linear Issue Ledger
 If it's not here, it isn't remembered.
@@ -319,6 +324,21 @@ Use one entry per bounded task, fix, audit, or review that would otherwise lose 
 - led to:
 - linear:
 ```
+
+### 2026-08-11 — exact Claude Opus 5 routing
+- Problem: Foreman's classifier, dispatcher, and Anthropic reviewer could select Haiku, Sonnet, or Opus 4.x after Trevor established exact Opus 5 as the global Claude model.
+- Reasoning: A global launcher cannot protect direct Anthropic SDK calls or repository-local model routing. Claude-authored work also cannot be independently reviewed by another Claude tier once all Claude work uses one exact model.
+- Diagnosis inputs: active Foreman scripts, reviewer tests, current governance docs, and the global active-selector scan.
+- Implementation inputs: `scripts/foreman-review.py`, `scripts/foreman-classify.py`, `scripts/foreman-dispatch.sh`, `scripts/test-review.py`, hook examples, and current model-routing docs.
+- Fix: pinned every Anthropic call to `claude-opus-5`, rejected stale explicit selectors before credentials, made classification adjust reasoning instead of model family, and routed Claude-authored review to OpenAI without an Anthropic fallback.
+- Self-audit:
+  - method: focused unit, syntax, compile, diff-hygiene, and cross-repository selector checks.
+  - outcome: green; no active Foreman Claude selector below Opus 5 remains.
+  - did not verify: a live provider response because the Claude account was weekly-rate-limited during the rollout.
+- by: Codex thread `019ff1e7-a4f1-7841-a6b7-99c783643ff5`.
+- triggered by: Trevor's global Opus 5-only direction; global ER-930.
+- led to: synchronized rollout branches in Taxes and bible-ai.
+- linear: repo-only / self-contained.
 
 ### 2026-04-16 — local GIL-37 rollout record
 - Problem: This repo had the shared Continuity / Coherence / Linear-Core baseline on disk, but its local durable record was still blank: `todo.md` had the new `Work Record Log` and `Linear Issue Ledger` sections with no repo-local pointer explaining why those surfaces landed here.

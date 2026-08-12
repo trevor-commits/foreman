@@ -70,7 +70,7 @@ resolve_review_base_ref() {
 MODEL_RAW="$(extract_field "Model" || true)"
 REASONING_RAW="$(extract_field "Reasoning Level" || true)"
 
-MODEL_RAW="${MODEL_RAW:-sonnet}"
+MODEL_RAW="${MODEL_RAW:-claude-opus-5}"
 REASONING_RAW="${REASONING_RAW:-medium}"
 TASK_GOAL="$(extract_field "Goal" || true)"
 
@@ -78,17 +78,13 @@ MODEL_NORMALIZED="$(printf '%s' "$MODEL_RAW" | tr '[:upper:]' '[:lower:]')"
 REASONING_NORMALIZED="$(printf '%s' "$REASONING_RAW" | tr '[:upper:]' '[:lower:]')"
 
 case "$MODEL_NORMALIZED" in
-  *haiku*)
-    MODEL_TIER="haiku"
+  claude|claude-opus-5|opus-5|opus5)
+    MODEL_TIER="claude-opus-5"
     TOOL_NAME="claude"
     ;;
-  *sonnet*)
-    MODEL_TIER="sonnet"
-    TOOL_NAME="claude"
-    ;;
-  *opus*)
-    MODEL_TIER="opus"
-    TOOL_NAME="claude"
+  *haiku*|*sonnet*|*opus*|*claude*)
+    printf 'foreman-dispatch: only claude-opus-5 is allowed for Claude work (got %s)\n' "$MODEL_RAW" >&2
+    exit 64
     ;;
   *codex*|*gpt*)
     MODEL_TIER="codex"
@@ -132,11 +128,11 @@ if [[ -n "$CLASSIFY_RESULT" ]] && command -v python3 >/dev/null 2>&1; then
   )"
   echo "Classifier route: ${CLASSIFY_ROUTE} - ${CLASSIFY_REASON}"
 
-  if [[ "$CLASSIFY_ROUTE" == "escalation" && "$MODEL_TIER" != "opus" ]]; then
-    MODEL_TIER="opus"
-    echo "WARNING: Haiku classifier escalated task to Opus - review escalation_triggers before proceeding"
+  if [[ "$CLASSIFY_ROUTE" == "escalation" && "$MODEL_TIER" == "claude-opus-5" ]]; then
+    REASONING_NORMALIZED="high"
+    echo "Classifier raised Claude Opus 5 reasoning to high - review escalation_triggers before proceeding"
   elif [[ "$CLASSIFY_ROUTE" == "cheap" && "$REASONING_NORMALIZED" == "low" ]]; then
-    MODEL_TIER="haiku"
+    MODEL_TIER="claude-opus-5"
   fi
 fi
 
