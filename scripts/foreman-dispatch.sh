@@ -54,13 +54,13 @@ extract_field() {
 }
 
 resolve_review_base_ref() {
-  if git show-ref --verify --quiet "refs/heads/main"; then
-    printf '%s\n' "main"
+  if git show-ref --verify --quiet "refs/remotes/origin/main"; then
+    printf '%s\n' "origin/main"
     return 0
   fi
 
-  if git show-ref --verify --quiet "refs/remotes/origin/main"; then
-    printf '%s\n' "origin/main"
+  if git show-ref --verify --quiet "refs/heads/main"; then
+    printf '%s\n' "main"
     return 0
   fi
 
@@ -267,7 +267,7 @@ echo "Next step after completing your work:"
 if [[ -n "$REVIEW_BASE_REF" ]]; then
   echo "  git diff ${REVIEW_BASE_REF}...HEAD | python3 \"$REVIEWER_SCRIPT\" --author-model ${MODEL_TIER} --branch ${BRANCH_NAME} -"
 else
-  echo "  if git show-ref --verify --quiet refs/heads/main; then BASE_REF=main; elif git show-ref --verify --quiet refs/remotes/origin/main; then BASE_REF=origin/main; else echo 'Missing main and origin/main'; exit 1; fi; git diff \"\${BASE_REF}\"...HEAD | python3 \"$REVIEWER_SCRIPT\" --author-model ${MODEL_TIER} --branch ${BRANCH_NAME} -"
+  echo "  if git show-ref --verify --quiet refs/remotes/origin/main; then BASE_REF=origin/main; elif git show-ref --verify --quiet refs/heads/main; then BASE_REF=main; else echo 'Missing origin/main and main'; exit 1; fi; git diff \"\${BASE_REF}\"...HEAD | python3 \"$REVIEWER_SCRIPT\" --author-model ${MODEL_TIER} --branch ${BRANCH_NAME} -"
 fi
 echo ""
 echo "When done and merged, close the branch:"

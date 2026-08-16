@@ -44,6 +44,9 @@ jobs:
       - name: Reviewer smoke tests
         run: python3 scripts/test-review.py
 
+      - name: Classifier smoke tests
+        run: python3 scripts/test-classify.py
+
       - name: Hook smoke tests
         run: bash scripts/test-hooks.sh
 

@@ -103,7 +103,7 @@ def test_missing_independent_reviewer_key_fails_closed() -> None:
             rc = module.main()
         finally:
             module.parse_args = original_parse_args
-    assert rc != 0, rc
+    assert rc == 2, rc
 
 
 def test_extract_json_from_fence() -> None:

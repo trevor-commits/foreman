@@ -47,3 +47,30 @@ printf 'PASS: cheap route preserves Codex author provenance\n'
 
 run_case "dispatch-claude" "claude-opus-5" "claude" "claude-opus-5"
 printf 'PASS: cheap route preserves Claude Opus 5 author provenance\n'
+
+git -C "$TEST_DIR" init -q
+git -C "$TEST_DIR" config user.name "Foreman Dispatch Test"
+git -C "$TEST_DIR" config user.email "foreman-dispatch-test@example.com"
+git -C "$TEST_DIR" add .
+git -C "$TEST_DIR" commit -q -m "test: initial local main"
+STALE_MAIN_HASH="$(git -C "$TEST_DIR" rev-parse HEAD)"
+git -C "$TEST_DIR" commit --allow-empty -q -m "test: current remote base"
+CURRENT_REMOTE_HASH="$(git -C "$TEST_DIR" rev-parse HEAD)"
+git -C "$TEST_DIR" update-ref refs/remotes/origin/main "$CURRENT_REMOTE_HASH"
+git -C "$TEST_DIR" checkout -q -b agent/codex/2026-08-15/base-preference
+git -C "$TEST_DIR" branch -f main "$STALE_MAIN_HASH"
+
+BASE_BRIEF_DIR="$TEST_DIR/2026-08-15-base-preference"
+BASE_BRIEF_PATH="$BASE_BRIEF_DIR/brief.md"
+mkdir -p "$BASE_BRIEF_DIR"
+printf '%s\n' \
+  '## Task Brief' \
+  '' \
+  '**Goal:** Verify review base preference' \
+  '**Model:** codex' \
+  '**Reasoning Level:** low' \
+  >"$BASE_BRIEF_PATH"
+
+BASE_OUTPUT="$(cd "$TEST_DIR" && ./foreman-dispatch.sh --no-classify "$BASE_BRIEF_PATH")"
+grep -Fq 'git diff origin/main...HEAD' <<<"$BASE_OUTPUT"
+printf 'PASS: dispatcher prefers current origin/main over stale local main\n'

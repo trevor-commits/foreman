@@ -3,8 +3,10 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TEST_REPO="/tmp/foreman-hook-test-$$"
-TEST_REMOTE="/tmp/foreman-hook-remote-$$.git"
+TEST_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/foreman-hooks.XXXXXX")"
+TEST_REPO="$TEST_ROOT/repo"
+TEST_REMOTE="$TEST_ROOT/remote.git"
+LOG_DIR="$TEST_ROOT/logs"
 FAILURES=0
 
 pass() {
@@ -17,11 +19,12 @@ fail() {
 }
 
 cleanup() {
-  rm -rf "$TEST_REPO"
-  rm -rf "$TEST_REMOTE"
+  rm -rf "$TEST_ROOT"
 }
 
 trap cleanup EXIT
+
+mkdir -p "$LOG_DIR"
 
 git -c init.defaultBranch=agent/codex/2026-04-11/hook-smoke init "$TEST_REPO" >/dev/null
 git init --bare "$TEST_REMOTE" >/dev/null
@@ -47,24 +50,24 @@ LONG_MESSAGE_FILE="$TEST_REPO/long-valid-message.txt"
   printf '\n\nAgent: codex-gpt-5\nThread: codex-desktop-2026-04-11\nTask: Long valid hook smoke commit\nVerified-By: manual\nReviewed-By: none-yet\n'
 } >"$LONG_MESSAGE_FILE"
 
-if "$TEST_REPO/.git/hooks/commit-msg" "$LONG_MESSAGE_FILE" >/tmp/foreman-hook-long-message.log 2>&1; then
+if "$TEST_REPO/.git/hooks/commit-msg" "$LONG_MESSAGE_FILE" >"$LOG_DIR/long-message.log" 2>&1; then
   pass "commit-msg accepts a long message with every required trailer under pipefail"
 else
-  cat /tmp/foreman-hook-long-message.log
+  cat "$LOG_DIR/long-message.log"
   fail "commit-msg accepts a long message with every required trailer under pipefail"
 fi
 
-if git -C "$TEST_REPO" commit --allow-empty -m "$VALID_MESSAGE" >/tmp/foreman-hook-init.log 2>&1; then
+if git -C "$TEST_REPO" commit --allow-empty -m "$VALID_MESSAGE" >"$LOG_DIR/init.log" 2>&1; then
   pass "initial commit with valid trailers is accepted"
 else
-  cat /tmp/foreman-hook-init.log
+  cat "$LOG_DIR/init.log"
   fail "initial commit with valid trailers is accepted"
 fi
 
-if git -C "$TEST_REPO" branch -M main && git -C "$TEST_REPO" push --no-verify -u origin main >/tmp/foreman-hook-main-push.log 2>&1; then
+if git -C "$TEST_REPO" branch -M main && git -C "$TEST_REPO" push --no-verify -u origin main >"$LOG_DIR/main-push.log" 2>&1; then
   pass "bootstrap main push succeeds without verify"
 else
-  cat /tmp/foreman-hook-main-push.log
+  cat "$LOG_DIR/main-push.log"
   fail "bootstrap main push succeeds without verify"
 fi
 
@@ -73,36 +76,36 @@ git -C "$TEST_REPO" commit --allow-empty --no-verify -m "test: remote base witho
 REMOTE_BASE_HASH="$(git -C "$TEST_REPO" rev-parse --short=7 HEAD)"
 git -C "$TEST_REPO" push --no-verify origin main
 
-if git -C "$TEST_REPO" checkout -b agent/codex/2026-04-11/trailer-warning >/tmp/foreman-hook-branch.log 2>&1; then
+if git -C "$TEST_REPO" checkout -b agent/codex/2026-04-11/trailer-warning >"$LOG_DIR/branch.log" 2>&1; then
   git -C "$TEST_REPO" branch -f main "$INITIAL_MAIN_HASH"
   pass "test branch for pre-push trailer scan is created"
 else
-  cat /tmp/foreman-hook-branch.log
+  cat "$LOG_DIR/branch.log"
   fail "test branch for pre-push trailer scan is created"
 fi
 
 if (
   cd "$TEST_REPO"
-  git commit --allow-empty -m "$MISSING_AGENT_MESSAGE" >/tmp/foreman-hook-missing-agent.log 2>&1
+  git commit --allow-empty -m "$MISSING_AGENT_MESSAGE" >"$LOG_DIR/missing-agent.log" 2>&1
 ); then
-  cat /tmp/foreman-hook-missing-agent.log
+  cat "$LOG_DIR/missing-agent.log"
   fail "commit without Agent trailer is rejected"
 else
   pass "commit without Agent trailer is rejected"
 fi
 
-if git -C "$TEST_REPO" commit --allow-empty -m "$VALID_COMMIT_MESSAGE" >/tmp/foreman-hook-valid.log 2>&1; then
+if git -C "$TEST_REPO" commit --allow-empty -m "$VALID_COMMIT_MESSAGE" >"$LOG_DIR/valid.log" 2>&1; then
   pass "commit with all required trailers is accepted"
 else
-  cat /tmp/foreman-hook-valid.log
+  cat "$LOG_DIR/valid.log"
   fail "commit with all required trailers is accepted"
 fi
 
-if git -C "$TEST_REPO" commit --allow-empty -F "$LONG_MESSAGE_FILE" >/tmp/foreman-hook-long-commit.log 2>&1; then
+if git -C "$TEST_REPO" commit --allow-empty -F "$LONG_MESSAGE_FILE" >"$LOG_DIR/long-commit.log" 2>&1; then
   LONG_COMMIT_HASH="$(git -C "$TEST_REPO" rev-parse --short=7 HEAD)"
   pass "long valid commit is available for pre-push trailer scanning"
 else
-  cat /tmp/foreman-hook-long-commit.log
+  cat "$LOG_DIR/long-commit.log"
   fail "long valid commit is available for pre-push trailer scanning"
 fi
 
@@ -111,46 +114,46 @@ INVALID_NO_VERIFY_COMMIT=$'test: invalid trailer commit bypass\n\nThread: codex-
 
 printf 'nonempty review diff\n' >"$TEST_REPO/review-fixture.txt"
 git -C "$TEST_REPO" add review-fixture.txt
-if git -C "$TEST_REPO" commit -m "$SECOND_VALID_COMMIT" >/tmp/foreman-hook-valid-second.log 2>&1; then
+if git -C "$TEST_REPO" commit -m "$SECOND_VALID_COMMIT" >"$LOG_DIR/valid-second.log" 2>&1; then
   pass "second valid commit for pre-push scan is accepted"
 else
-  cat /tmp/foreman-hook-valid-second.log
+  cat "$LOG_DIR/valid-second.log"
   fail "second valid commit for pre-push scan is accepted"
 fi
 
-if git -C "$TEST_REPO" commit --allow-empty --no-verify -m "$INVALID_NO_VERIFY_COMMIT" >/tmp/foreman-hook-invalid-no-verify.log 2>&1; then
+if git -C "$TEST_REPO" commit --allow-empty --no-verify -m "$INVALID_NO_VERIFY_COMMIT" >"$LOG_DIR/invalid-no-verify.log" 2>&1; then
   pass "invalid commit can be created with --no-verify for pre-push scan"
 else
-  cat /tmp/foreman-hook-invalid-no-verify.log
+  cat "$LOG_DIR/invalid-no-verify.log"
   fail "invalid commit can be created with --no-verify for pre-push scan"
 fi
 
 if (
   cd "$TEST_REPO"
-  git push origin agent/codex/2026-04-11/trailer-warning >/tmp/foreman-hook-pre-push.log 2>&1
+  git push origin agent/codex/2026-04-11/trailer-warning >"$LOG_DIR/pre-push.log" 2>&1
 ); then
-  if grep -Fq "commit $LONG_COMMIT_HASH: missing" /tmp/foreman-hook-pre-push.log; then
-    cat /tmp/foreman-hook-pre-push.log
+  if grep -Fq "commit $LONG_COMMIT_HASH: missing" "$LOG_DIR/pre-push.log"; then
+    cat "$LOG_DIR/pre-push.log"
     fail "pre-push trailer validation accepts the long valid commit under pipefail"
   else
     pass "pre-push trailer validation accepts the long valid commit under pipefail"
   fi
 
-  if grep -Fq "commit $REMOTE_BASE_HASH: missing" /tmp/foreman-hook-pre-push.log; then
-    cat /tmp/foreman-hook-pre-push.log
+  if grep -Fq "commit $REMOTE_BASE_HASH: missing" "$LOG_DIR/pre-push.log"; then
+    cat "$LOG_DIR/pre-push.log"
     fail "pre-push trailer validation uses current origin/main over stale local main"
   else
     pass "pre-push trailer validation uses current origin/main over stale local main"
   fi
 
-  if grep -Fq "missing 'Agent:' trailer" /tmp/foreman-hook-pre-push.log; then
+  if grep -Fq "missing 'Agent:' trailer" "$LOG_DIR/pre-push.log"; then
     pass "pre-push trailer validation warns when a branch commit is missing Agent"
   else
-    cat /tmp/foreman-hook-pre-push.log
+    cat "$LOG_DIR/pre-push.log"
     fail "pre-push trailer validation warns when a branch commit is missing Agent"
   fi
 else
-  cat /tmp/foreman-hook-pre-push.log
+  cat "$LOG_DIR/pre-push.log"
   fail "pre-push trailer validation push warning run succeeds"
 fi
 

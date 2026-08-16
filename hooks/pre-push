@@ -277,7 +277,7 @@ else
   :
 fi
 
-if [[ -n "${REVIEW_DIFF:-}" ]]; then
+if [[ -n "${REVIEW_DIFF:-}" ]] && grep -q '[^[:space:]]' <<<"$REVIEW_DIFF"; then
   BRANCH_COMMIT_COUNT="$(git rev-list --count "${REVIEW_BASE_REF}"..HEAD 2>/dev/null || echo 0)"
   AGENT_MODELS=()
   while IFS= read -r agent_model; do

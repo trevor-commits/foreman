@@ -201,9 +201,9 @@ Each active branch entry should include:
 
 ## Test Evidence Log
 - date: 2026-08-15
-  command(s): `bash scripts/test-dispatch.sh`; `bash scripts/test-hooks.sh`; `python3 scripts/test-review.py`; `bash -n scripts/foreman-dispatch.sh hooks/pre-push hooks/commit-msg`; `python3 -m py_compile scripts/foreman-review.py scripts/foreman-mcp-server.py`; workflow YAML parse; `git diff --check`
-  result: pass — the classifier regression preserves both Codex and Claude author provenance, the full hook and reviewer suites pass, and the updated tooling workflow is valid
-  log/PR reference: PR #4 review fixes; Cursor Bugbot and GitHub Codex threads recorded in the Feedback Decision Log
+  command(s): `python3 scripts/test-classify.py`; `bash scripts/test-dispatch.sh`; `bash scripts/test-hooks.sh`; `python3 scripts/test-review.py`; Bash syntax; Python compile; workflow YAML parse; `git diff --check`
+  result: pass — provider failures fall back safely, dispatcher and hook base selection prefer current `origin/main`, author provenance is preserved, secure temporary paths are used, and fail-closed review returns exit code 2
+  log/PR reference: PR #4 review fixes; Cursor Bugbot, GitHub Codex, and CodeRabbit threads recorded in the Feedback Decision Log
 - date: 2026-08-11
   command(s): `python3 scripts/test-review.py`; `python3 -m py_compile scripts/foreman-review.py scripts/foreman-classify.py`; `bash -n scripts/foreman-dispatch.sh hooks/commit-msg`; Global Implementations `scripts/claude-opus5-active-selectors.test.sh` against the isolated rollout worktrees
   result: pass — reviewer routing uses exact `claude-opus-5`, rejects earlier Anthropic selectors before credentials, preserves independent OpenAI review for Claude-authored work, and the fleet selector audit reports 3 passed / 0 failed
@@ -347,6 +347,7 @@ Each active branch entry should include:
 | Pre-push gate | `bash -n hooks/pre-push && bash -n hooks/commit-msg` | Every push | Must pass (syntax valid) |
 | Reviewer script compile | `python3 -m py_compile scripts/foreman-review.py` | Every push | Must pass |
 | Reviewer smoke tests | `python3 scripts/test-review.py` | Every push | All tests PASS |
+| Classifier smoke tests | `python3 scripts/test-classify.py` | Every push after classifier changes | All tests PASS |
 | Hook smoke tests | `bash scripts/test-hooks.sh` | Every push after hook changes | All tests PASS |
 | Hosted CI tooling suite | `.github/workflows/test-foreman-tooling.yml` | Every push and PR to `main` | Both GitHub Actions jobs pass |
 | Dispatcher provenance regression | `bash scripts/test-dispatch.sh` | Every push and PR after dispatcher changes | All tests PASS |
@@ -367,13 +368,13 @@ Record outside feedback and the resulting reasoning once, then update the same e
   - `linked branch / audit / suggestion / test evidence`
 - Reuse or update an existing entry when the same feedback thread comes back instead of opening duplicate records.
 - 2026-08-15 — PR #4 routing and documentation review
-  - feedback source: Cursor Bugbot and GitHub Codex
-  - feedback summary: The `cheap` classifier path overwrote non-Claude author provenance. Reviewer setup docs described a removed same-provider fallback.
+  - feedback source: Cursor Bugbot, GitHub Codex, and CodeRabbit
+  - feedback summary: The `cheap` classifier path overwrote author provenance; review bases could drift; provider failures, whitespace guards, temporary logs, and fail-closed assertions needed hardening; reviewer docs and the canonical branch ledger were stale.
   - evaluation chat: Codex task `01a00813-4314-76d0-8dea-2ca70f2126fb`
-  - reasoning response: Accepted after reproducing `--author-model claude-opus-5` for a Codex brief and confirming stale documentation.
-  - decision status: accepted. The duplicate routing findings share one fix.
+  - reasoning response: Accepted the reproducible findings and added focused regressions. Rejected renaming `codex/er930-opus5-only` because its active lease binds that exact branch and worktree; the safe disposition is archive, merge proof, owner release, then deletion.
+  - decision status: accepted except for the lease-unsafe historical branch rename
   - implementation/disposition chat: same task
-  - linked evidence: `scripts/test-dispatch.sh` and PR threads `PRRT_kwDOR-dGxc6Zj5-0`, `PRRT_kwDOR-dGxc6Zj6Fj`, and `PRRT_kwDOR-dGxc6Zj6Fl`
+  - linked evidence: `scripts/test-classify.py`, `scripts/test-dispatch.sh`, `scripts/test-hooks.sh`, and PR threads `PRRT_kwDOR-dGxc6Zj5-0`, `PRRT_kwDOR-dGxc6Zj6Fj`, `PRRT_kwDOR-dGxc6Zj6Fl`, `PRRT_kwDOR-dGxc6Zj64t`, `PRRT_kwDOR-dGxc6Zj64y`, `PRRT_kwDOR-dGxc6Zj642`, `PRRT_kwDOR-dGxc6Zj645`, `PRRT_kwDOR-dGxc6Zj648`, `PRRT_kwDOR-dGxc6Zj64-`, and `PRRT_kwDOR-dGxc6Zj9aL`
   - systemic disposition: repository-local routing and documentation drift, covered by regression tests and CI
 - 2026-08-11 | feedback source: Trevor, Codex thread `019ff1e7-a4f1-7841-a6b7-99c783643ff5` | feedback summary: all Claude execution should use Opus 5 globally | reasoning response: accepted for active execution paths; pin the exact public selector, remove same-provider lower-tier fallbacks, and retain independent review by routing Claude-authored work to OpenAI | decision status: accepted / implemented on `codex/er930-opus5-only` | linked evidence: Work Record `2026-08-11 — exact Claude Opus 5 routing`; Test Evidence above; global ER-930
 

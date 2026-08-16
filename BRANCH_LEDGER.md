@@ -13,6 +13,7 @@ Update this file when you open a branch (set status `open`) and when you close i
 | Branch | Agent | Date | Task | Merge Condition | Thread | Status | Notes |
 |--------|-------|------|------|-----------------|--------|--------|-------|
 | `agent/codex/2026-08-15/branch-cleanup` | codex-gpt-5.6-sol | 2026-08-15 | Merge every non-default branch into `main`, preserve dirty work, and remove merged branches and releasable worktrees | all work preserved; repository checks pass; `main` pushed; owner-bound worktree released through its lease | `01a00813-4314-76d0-8dea-2ca70f2126fb` | open | `self-contained:` direct cleanup request; target `main`; rollback refs retained until final verification |
+| `agent/claude/2026-07-30/agents-first-consolidation` | claude | 2026-07-30 | Consolidate the agent-first governance changes | delete only after the merged PR #3 head is archived and verified content-equivalent to `origin/main` | none | merged | PR #3 merged as `13b592f`; no owner lease; source head `6cf1425` is retained by an archive tag and verified bundle; cleanup pending |
 | `codex/er930-opus5-only` | codex-gpt-5.6 | 2026-08-11 | Enforce exact Claude Opus 5 selectors and fail closed on earlier Claude models | focused tests + global selector audit + origin/main landing | `019ff1e7-a4f1-7841-a6b7-99c783643ff5` | open | Global ER-930 rollout; Claude-authored work routes to independent OpenAI review |
 
 ---
