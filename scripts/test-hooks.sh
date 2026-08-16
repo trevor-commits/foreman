@@ -68,7 +68,13 @@ else
   fail "bootstrap main push succeeds without verify"
 fi
 
+INITIAL_MAIN_HASH="$(git -C "$TEST_REPO" rev-parse HEAD)"
+git -C "$TEST_REPO" commit --allow-empty --no-verify -m "test: remote base without trailers"
+REMOTE_BASE_HASH="$(git -C "$TEST_REPO" rev-parse --short=7 HEAD)"
+git -C "$TEST_REPO" push --no-verify origin main
+
 if git -C "$TEST_REPO" checkout -b agent/codex/2026-04-11/trailer-warning >/tmp/foreman-hook-branch.log 2>&1; then
+  git -C "$TEST_REPO" branch -f main "$INITIAL_MAIN_HASH"
   pass "test branch for pre-push trailer scan is created"
 else
   cat /tmp/foreman-hook-branch.log
@@ -90,6 +96,14 @@ if git -C "$TEST_REPO" commit --allow-empty -m "$VALID_COMMIT_MESSAGE" >/tmp/for
 else
   cat /tmp/foreman-hook-valid.log
   fail "commit with all required trailers is accepted"
+fi
+
+if git -C "$TEST_REPO" commit --allow-empty -F "$LONG_MESSAGE_FILE" >/tmp/foreman-hook-long-commit.log 2>&1; then
+  LONG_COMMIT_HASH="$(git -C "$TEST_REPO" rev-parse --short=7 HEAD)"
+  pass "long valid commit is available for pre-push trailer scanning"
+else
+  cat /tmp/foreman-hook-long-commit.log
+  fail "long valid commit is available for pre-push trailer scanning"
 fi
 
 SECOND_VALID_COMMIT=$'test: second valid trailer commit\n\nAgent: codex-gpt-5\nThread: codex-desktop-2026-04-11\nTask: Second valid hook smoke commit\nVerified-By: manual\nReviewed-By: none-yet'
@@ -115,6 +129,20 @@ if (
   cd "$TEST_REPO"
   git push origin agent/codex/2026-04-11/trailer-warning >/tmp/foreman-hook-pre-push.log 2>&1
 ); then
+  if grep -Fq "commit $LONG_COMMIT_HASH: missing" /tmp/foreman-hook-pre-push.log; then
+    cat /tmp/foreman-hook-pre-push.log
+    fail "pre-push trailer validation accepts the long valid commit under pipefail"
+  else
+    pass "pre-push trailer validation accepts the long valid commit under pipefail"
+  fi
+
+  if grep -Fq "commit $REMOTE_BASE_HASH: missing" /tmp/foreman-hook-pre-push.log; then
+    cat /tmp/foreman-hook-pre-push.log
+    fail "pre-push trailer validation uses current origin/main over stale local main"
+  else
+    pass "pre-push trailer validation uses current origin/main over stale local main"
+  fi
+
   if grep -Fq "missing 'Agent:' trailer" /tmp/foreman-hook-pre-push.log; then
     pass "pre-push trailer validation warns when a branch commit is missing Agent"
   else

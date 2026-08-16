@@ -100,13 +100,13 @@ resolve_review_base_ref() {
     return 1
   fi
 
-  if git show-ref --verify --quiet "refs/heads/main"; then
-    printf '%s\n' "main"
+  if git show-ref --verify --quiet "refs/remotes/origin/main"; then
+    printf '%s\n' "origin/main"
     return 0
   fi
 
-  if git show-ref --verify --quiet "refs/remotes/origin/main"; then
-    printf '%s\n' "origin/main"
+  if git show-ref --verify --quiet "refs/heads/main"; then
+    printf '%s\n' "main"
     return 0
   fi
 
@@ -240,7 +240,7 @@ else
     fi
 
     for trailer in "${REQUIRED_TRAILERS[@]}"; do
-      if ! printf '%s\n' "$commit_msg" | grep -qiE "^${trailer}:[[:space:]].+"; then
+      if ! grep -qiE "^${trailer}:[[:space:]].+" <<<"$commit_msg"; then
         TRAILER_ERRORS+=("  ❌  commit ${commit_hash:0:7}: missing '$trailer:' trailer")
       fi
     done
