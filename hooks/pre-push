@@ -192,9 +192,11 @@ fi
 # ── Results ───────────────────────────────────────────────────────────────────
 echo ""
 echo "    Gate results:"
-for line in "${RESULTS[@]}"; do
-  echo "  $line"
-done
+if [ "${#RESULTS[@]}" -gt 0 ]; then
+  for line in "${RESULTS[@]}"; do
+    echo "  $line"
+  done
+fi
 echo ""
 
 if [ "$GATE_PASSED" = false ]; then
@@ -206,7 +208,10 @@ if [ "$GATE_PASSED" = false ]; then
 fi
 
 # ── Warn if no gates actually ran ─────────────────────────────────────────────
-REAL_GATES="$(printf '%s\n' "${RESULTS[@]}" | awk '/✅|❌/ {count++} END {print count+0}')"
+REAL_GATES=0
+if [ "${#RESULTS[@]}" -gt 0 ]; then
+  REAL_GATES="$(printf '%s\n' "${RESULTS[@]}" | awk '/✅|❌/ {count++} END {print count+0}')"
+fi
 if [ "$REAL_GATES" -eq 0 ]; then
   echo "⚠️   foreman: no gates ran — no test/lint/build tools detected."
   echo "    Consider adding tests. Push proceeding, but this branch has no"

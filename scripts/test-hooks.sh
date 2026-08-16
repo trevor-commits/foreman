@@ -38,6 +38,20 @@ VALID_MESSAGE=$'test: initialize hook smoke repo\n\nAgent: codex-gpt-5\nThread: 
 MISSING_AGENT_MESSAGE=$'test: missing agent trailer\n\nThread: codex-desktop-2026-04-11\nTask: Missing Agent trailer should fail\nVerified-By: manual\nReviewed-By: none-yet'
 VALID_COMMIT_MESSAGE=$'test: valid trailer commit\n\nAgent: codex-gpt-5\nThread: codex-desktop-2026-04-11\nTask: Valid hook smoke commit\nVerified-By: manual\nReviewed-By: none-yet'
 
+LONG_MESSAGE_FILE="$TEST_REPO/long-valid-message.txt"
+{
+  printf 'test: long valid trailer message\n\nAgent: early body marker\n'
+  head -c 131072 /dev/zero | tr '\0' x
+  printf '\n\nAgent: codex-gpt-5\nThread: codex-desktop-2026-04-11\nTask: Long valid hook smoke commit\nVerified-By: manual\nReviewed-By: none-yet\n'
+} >"$LONG_MESSAGE_FILE"
+
+if "$TEST_REPO/.git/hooks/commit-msg" "$LONG_MESSAGE_FILE" >/tmp/foreman-hook-long-message.log 2>&1; then
+  pass "commit-msg accepts a long message with every required trailer under pipefail"
+else
+  cat /tmp/foreman-hook-long-message.log
+  fail "commit-msg accepts a long message with every required trailer under pipefail"
+fi
+
 if git -C "$TEST_REPO" commit --allow-empty -m "$VALID_MESSAGE" >/tmp/foreman-hook-init.log 2>&1; then
   pass "initial commit with valid trailers is accepted"
 else

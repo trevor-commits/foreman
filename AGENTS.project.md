@@ -47,7 +47,7 @@ branch names. Set `FOREMAN_STRICT_BRANCH=1` to promote this to a hard gate.
 Every commit message MUST include these trailers after a blank line:
 
 ```
-Agent: <tool and model, e.g. codex-5.3 or claude-sonnet-4-6>
+Agent: <tool and model, e.g. codex-5.3 or claude-opus-5>
 Thread: <session/thread ID or URL — use "cowork" if from Cowork>
 Task: <one-line description of the actual ask>
 Verified-By: <comma-separated: pytest, ruff, mypy, build, manual, etc.>
@@ -66,7 +66,7 @@ Agent: codex-5.3
 Thread: https://platform.openai.com/codex/threads/t_abc123
 Task: Add Stripe webhook handler with signature verification
 Verified-By: pytest, ruff, mypy
-Reviewed-By: claude-sonnet-4-6
+Reviewed-By: claude-opus-5
 ```
 
 Now that Phase 2 automated review runs from `hooks/pre-push`, `Reviewed-By:` is automatically
@@ -131,19 +131,18 @@ Phase 2.1 routing policy:
 
 | Task type | Model | Reasoning level |
 |-----------|-------|-----------------|
-| Standard feature work, refactors, test writing | Sonnet 4.6 | medium |
-| Architecture, hard debugging, ambiguous requirements | Opus 4.6 | high |
-| Reviewing another model's output | Different model than author | medium |
+| Standard feature work, refactors, test writing | Claude Opus 5 | medium |
+| Architecture, hard debugging, ambiguous requirements | Claude Opus 5 | high |
+| Reviewing another provider's output | Claude Opus 5 | medium/high |
 
 Notes:
-- Phase 2.1 adds an optional Haiku classifier in `scripts/foreman-classify.py`, called by
+- Phase 2.1 includes an optional Opus 5 classifier in `scripts/foreman-classify.py`, called by
   `scripts/foreman-dispatch.sh` unless `--no-classify` is used.
 - The classifier returns `cheap`, `standard`, or `escalation`; confidence below `0.7`
   routes upward one tier, and any non-empty `escalation_triggers` forces escalation.
-- The dispatcher only routes down to Haiku when the classifier says `cheap` and the brief
-  already requests `low` reasoning. Otherwise the baseline remains Sonnet for normal work
-  and Opus for escalations.
-- Key rule: the reviewer must always be a different model than the one that wrote the code.
+- The classifier changes route labels and reasoning only. Every Claude request remains exact
+  `claude-opus-5`; earlier Claude selectors fail before a provider request.
+- Independent review should use a different provider when Claude authored the work.
 
 ---
 

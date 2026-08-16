@@ -4,7 +4,7 @@
 # Enforces the foreman commit trailer schema on every non-merge commit.
 #
 # Required trailers (after a blank line at the end of the commit message):
-#   Agent:       which tool and model wrote this (e.g. codex-5.3, claude-sonnet-4-6)
+#   Agent:       which tool and model wrote this (e.g. codex-5.3, claude-opus-5)
 #   Thread:      session/thread ID or URL that spawned this task
 #   Task:        one-line description of the actual ask
 #   Verified-By: comma-separated list of checks that ran (pytest, ruff, build, etc.)
@@ -23,7 +23,7 @@ COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
 COMMIT_SUBJECT="$(sed -n '1p' "$COMMIT_MSG_FILE")"
 
 # ── Skip auto-generated commits ───────────────────────────────────────────────
-if printf '%s\n' "$COMMIT_SUBJECT" | grep -qE '^(Merge |fixup! |squash! |WIP |wip )'; then
+if grep -qE '^(Merge |fixup! |squash! |WIP |wip )' <<<"$COMMIT_SUBJECT"; then
   exit 0
 fi
 
@@ -38,7 +38,7 @@ MISSING=()
 check_trailer() {
   local trailer="$1"
   # Trailers appear at the start of a line, case-insensitive, followed by a colon
-  if ! printf '%s\n' "$COMMIT_MSG" | grep -qiE "^${trailer}:[[:space:]]*.+"; then
+  if ! grep -qiE "^${trailer}:[[:space:]]*.+" "$COMMIT_MSG_FILE"; then
     MISSING+=("$trailer")
   fi
 }
@@ -49,9 +49,9 @@ check_trailer "Task"
 check_trailer "Verified-By"
 
 # ── Warn if Reviewed-By is missing or set to "none-yet" ──────────────────────
-REVIEWED_BY="$(printf '%s\n' "$COMMIT_MSG" | grep -iE "^Reviewed-By:" | head -1 || true)"
+REVIEWED_BY="$(grep -im1 -E "^Reviewed-By:" "$COMMIT_MSG_FILE" || true)"
 REVIEW_WARNING=false
-if [[ -z "$REVIEWED_BY" ]] || printf '%s\n' "$REVIEWED_BY" | grep -qi "none-yet"; then
+if [[ -z "$REVIEWED_BY" ]] || grep -qi "none-yet" <<<"$REVIEWED_BY"; then
   REVIEW_WARNING=true
 fi
 
@@ -66,7 +66,7 @@ if [ ${#MISSING[@]} -gt 0 ]; then
   echo ""
   echo "    Add these trailers after a blank line at the end of your message:"
   echo ""
-  echo "        Agent: <tool-model, e.g. codex-5.3 or claude-sonnet-4-6>"
+  echo "        Agent: <tool-model, e.g. codex-5.3 or claude-opus-5>"
   echo "        Thread: <session/thread ID or URL, or 'cowork' if from Cowork>"
   echo "        Task: <one-line description of the actual ask>"
   echo "        Verified-By: <checks that ran: pytest, ruff, mypy, build, manual, etc.>"
