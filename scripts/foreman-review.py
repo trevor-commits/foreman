@@ -418,14 +418,14 @@ def main() -> int:
         print_review(review, output_path)
         return 1 if review["verdict"] == "BLOCKER" else 0
     except MissingKeyError as exc:
-        print(f"Reviewer warning: {exc} Skipping review.", file=sys.stderr)
-        return 0
+        print(f"Reviewer error: {exc} Review was not performed.", file=sys.stderr)
+        return 2
     except DependencyError as exc:
-        print(f"Reviewer warning: {exc} Skipping review.", file=sys.stderr)
-        return 0
+        print(f"Reviewer error: {exc} Review was not performed.", file=sys.stderr)
+        return 2
     except Exception as exc:
-        print(f"Reviewer warning: review failed: {exc}", file=sys.stderr)
-        return 0
+        print(f"Reviewer error: review failed: {exc}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":

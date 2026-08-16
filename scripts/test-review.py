@@ -84,6 +84,28 @@ def test_anthropic_rejects_non_opus5_before_credentials() -> None:
         raise AssertionError("non-Opus 5 Anthropic model was accepted")
 
 
+def test_missing_independent_reviewer_key_fails_closed() -> None:
+    os.environ.pop("OPENAI_API_KEY", None)
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        diff_path = Path(tmp_dir) / "change.diff"
+        diff_path.write_text("diff --git a/a b/a\n+changed\n", encoding="utf-8")
+        original_parse_args = module.parse_args
+        module.parse_args = lambda: type(
+            "Args",
+            (),
+            {
+                "diff_source": str(diff_path),
+                "author_model": "claude-opus-5",
+                "branch": "agent/claude/2026-08-12/fixture",
+            },
+        )()
+        try:
+            rc = module.main()
+        finally:
+            module.parse_args = original_parse_args
+    assert rc != 0, rc
+
+
 def test_extract_json_from_fence() -> None:
     payload = '```json\n{"verdict":"APPROVE","summary":"ok","issues":[],"reviewer_model":"test"}\n```'
     result = module.extract_json_object(payload)
@@ -210,6 +232,7 @@ def main() -> int:
         ("codex author routes to Anthropic Opus 5", test_codex_route_without_openai_key),
         ("Claude author routes to independent OpenAI review", test_claude_route_without_openai_key),
         ("Anthropic rejects non-Opus 5 before credentials", test_anthropic_rejects_non_opus5_before_credentials),
+        ("missing independent reviewer credentials fail closed", test_missing_independent_reviewer_key_fails_closed),
         ("extract_json_object parses markdown-fenced JSON", test_extract_json_from_fence),
         ("extract_json_object parses bare JSON", test_extract_json_from_bare_string),
         ("validate_review rejects missing verdict", test_validate_review_missing_verdict),
