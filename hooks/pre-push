@@ -271,7 +271,7 @@ elif [ ! -f "$REVIEWER_SCRIPT" ]; then
   echo "Reviewer: skipped (review script not available)"
 elif ! REVIEW_DIFF="$(git diff "${REVIEW_BASE_REF}"...HEAD 2>/dev/null)"; then
   echo "Reviewer: skipped (unable to diff against ${REVIEW_BASE_REF})"
-elif [[ -z "${REVIEW_DIFF//[[:space:]]/}" ]]; then
+elif ! grep -q '[^[:space:]]' <<<"$REVIEW_DIFF"; then
   echo "Reviewer: skipped (empty diff)"
 else
   :
@@ -279,7 +279,12 @@ fi
 
 if [[ -n "${REVIEW_DIFF:-}" ]]; then
   BRANCH_COMMIT_COUNT="$(git rev-list --count "${REVIEW_BASE_REF}"..HEAD 2>/dev/null || echo 0)"
-  mapfile -t AGENT_MODELS < <(
+  AGENT_MODELS=()
+  while IFS= read -r agent_model; do
+    if [[ -n "$agent_model" ]]; then
+      AGENT_MODELS+=("$agent_model")
+    fi
+  done < <(
     git log "${REVIEW_BASE_REF}"..HEAD --format=%B | \
       sed -n 's/^Agent:[[:space:]]*//p' | sort | uniq -c | sort -rn | \
       awk '{print $2}' | head -5

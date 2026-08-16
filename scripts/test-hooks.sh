@@ -32,6 +32,8 @@ git -C "$TEST_REPO" remote add origin "$TEST_REMOTE"
 
 cp "$ROOT_DIR/hooks/commit-msg" "$TEST_REPO/.git/hooks/commit-msg"
 cp "$ROOT_DIR/hooks/pre-push" "$TEST_REPO/.git/hooks/pre-push"
+mkdir -p "$TEST_REPO/scripts"
+cp "$ROOT_DIR/scripts/foreman-review.py" "$TEST_REPO/scripts/foreman-review.py"
 chmod +x "$TEST_REPO/.git/hooks/commit-msg" "$TEST_REPO/.git/hooks/pre-push"
 
 VALID_MESSAGE=$'test: initialize hook smoke repo\n\nAgent: codex-gpt-5\nThread: codex-desktop-2026-04-11\nTask: Initialize hook smoke repo\nVerified-By: manual\nReviewed-By: none-yet'
@@ -93,7 +95,9 @@ fi
 SECOND_VALID_COMMIT=$'test: second valid trailer commit\n\nAgent: codex-gpt-5\nThread: codex-desktop-2026-04-11\nTask: Second valid hook smoke commit\nVerified-By: manual\nReviewed-By: none-yet'
 INVALID_NO_VERIFY_COMMIT=$'test: invalid trailer commit bypass\n\nThread: codex-desktop-2026-04-11\nTask: Bypassed invalid hook smoke commit\nVerified-By: manual\nReviewed-By: none-yet'
 
-if git -C "$TEST_REPO" commit --allow-empty -m "$SECOND_VALID_COMMIT" >/tmp/foreman-hook-valid-second.log 2>&1; then
+printf 'nonempty review diff\n' >"$TEST_REPO/review-fixture.txt"
+git -C "$TEST_REPO" add review-fixture.txt
+if git -C "$TEST_REPO" commit -m "$SECOND_VALID_COMMIT" >/tmp/foreman-hook-valid-second.log 2>&1; then
   pass "second valid commit for pre-push scan is accepted"
 else
   cat /tmp/foreman-hook-valid-second.log
