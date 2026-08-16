@@ -43,7 +43,35 @@ Each active branch entry should include:
 - `exit checklist`
 - `delete when` or `retain after close`
 - `retain reason` when not deleting
-- None currently.
+
+### `agent/codex/2026-08-15/branch-cleanup`
+- status: active
+- created: 2026-08-15
+- base: `origin/main` at `13b592f3ccf60aa04001d291feab2a109e07a494`
+- worktree: `/Users/gillettes/Coding Projects/foreman`
+- source chat: 2026-08-15 "merge/delete all branches/worktrees in this repo without losing any work" (`01a00813-4314-76d0-8dea-2ca70f2126fb`)
+- last refreshed by chat: 2026-08-15 inventory and ownership verification
+- purpose: preserve every branch and dirty-path contribution, merge the net work to `main`, then remove fully merged branches and owner-released linked worktrees
+- linked issue: `self-contained:` direct repository cleanup request
+- plugin mirror: none; live Linear team remains `TODO: verify`
+- merge expectation: merge to `main`
+- merge target: `main`
+- review surface: local integration and repository verification; independent review status to be recorded before merge
+- exit checklist:
+  - [ ] Dirty work committed or preserved in a verified recovery artifact
+  - [ ] Every non-default branch contribution merged or explicitly shown content-equivalent
+  - [ ] Required verification complete
+  - [ ] Branch records and Work Record updated
+  - [ ] Cleanup branch pushed and merged to `main`
+  - [ ] Owner-bound linked worktree released and removed through the cleanup broker
+  - [ ] Fully merged non-default local and remote branches deleted through approved paths
+- delete when: after `main` contains the cleanup result and final recovery checks pass
+- retain reason: n/a
+- cleanup command: owner-bound broker for linked worktrees; audited remote-ref deletion path for remote branches
+- linked PR/audit/completion record: `TODO: verify`
+- pre-existing dirt at task start: primary checkout had no tracked dirt and five ignored paths (`.DS_Store`, one task brief, one review JSON, two Python bytecode files); linked `codex/er930-opus5-only` worktree had two modified tracked files and no listed ignored paths
+- usable invocation path: n/a; this task changes repository state and records only
+- owner lease: primary checkout has no lease; linked `codex/er930-opus5-only` worktree is owned by task `019ff1e7-a4f1-7841-a6b7-99c783643ff5`, lease `392bea34-d735-424c-8f62-5150c56447cf`, state file `.git/codex-worktree-owners/8099c29fc332f55a648b287cefce5e43c8b38e812e5ccdcf9dc1009ad0e4a2d2.json`; only that owner may release it
 
 ## Branch History
 - branch: `agent/codex/2026-04-11/enrich-reviewer-prompt`
