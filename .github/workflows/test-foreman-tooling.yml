@@ -47,6 +47,9 @@ jobs:
       - name: Hook smoke tests
         run: bash scripts/test-hooks.sh
 
+      - name: Dispatcher routing tests
+        run: bash scripts/test-dispatch.sh
+
       - name: MCP shim help check
         run: python3 scripts/foreman-mcp-shim.py --help 2>&1 | grep -q "tool" || \
           python3 scripts/foreman-mcp-shim.py --tool foreman_review \

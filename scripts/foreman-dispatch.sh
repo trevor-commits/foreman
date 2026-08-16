@@ -131,8 +131,6 @@ if [[ -n "$CLASSIFY_RESULT" ]] && command -v python3 >/dev/null 2>&1; then
   if [[ "$CLASSIFY_ROUTE" == "escalation" && "$MODEL_TIER" == "claude-opus-5" ]]; then
     REASONING_NORMALIZED="high"
     echo "Classifier raised Claude Opus 5 reasoning to high - review escalation_triggers before proceeding"
-  elif [[ "$CLASSIFY_ROUTE" == "cheap" && "$REASONING_NORMALIZED" == "low" ]]; then
-    MODEL_TIER="claude-opus-5"
   fi
 fi
 

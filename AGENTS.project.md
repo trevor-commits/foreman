@@ -304,9 +304,9 @@ This repo: shell scripts, Markdown. Language-agnostic — the conventions apply 
 
 ## 12. Current Phase (merged from CLAUDE.md)
 
-**Phase 2.1** — Phase 2 governance is live, the reviewer still defaults to a soft gate,
-the optional Haiku classifier is implemented, branch-name warnings now exist in `pre-push`,
-and the remaining work is live validation plus deciding which soft gates should become defaults.
+**Phase 2.1** — Phase 2 governance is live. The reviewer still defaults to a soft gate.
+The optional exact Opus 5 classifier and `pre-push` branch-name warnings are implemented.
+The remaining work is live validation plus deciding which soft gates should become defaults.
 
 Phase 2.1 work still to finish:
 - default hard-gate promotion decision after the burn-in window
@@ -331,7 +331,8 @@ Completed through 2026-04-11 and present on disk on `main`:
 - Phase 2 reviewer automation is now implemented via `scripts/foreman-review.py`
 - `hooks/pre-push` now runs the reviewer after the existing gates and reports `APPROVE` / `REQUEST_CHANGES` / `BLOCKER` as a soft gate
 - `scripts/foreman-dispatch.sh` now prints the exact post-run reviewer command for the author to run manually
-- `scripts/foreman-classify.py` now provides an optional Haiku task classifier for `scripts/foreman-dispatch.sh`, with upward routing on low confidence and `--no-classify` for bypass/testing
+- `scripts/foreman-classify.py` provides an optional exact Opus 5 classifier for `scripts/foreman-dispatch.sh`.
+  Low confidence routes upward, and `--no-classify` supports bypass and testing.
 - `FOREMAN_HARD_GATE=1` now promotes reviewer `BLOCKER` verdicts to a hard gate without editing the hook
 - `FOREMAN_STRICT_BRANCH=1` now promotes non-compliant branch-name warnings to a hard gate without editing the hook
 - `docs/mcp-tools.md` and `scripts/foreman-mcp-shim.py` now define a proof-of-concept MCP boundary for the existing governance operations

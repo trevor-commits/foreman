@@ -73,10 +73,11 @@ printf '%s' "$DIFF" | python3 scripts/foreman-review.py --author-model "$AUTHOR_
 ### API key requirements
 
 - Empty or whitespace-only diffs: no API key required
-- Claude-authored diffs: prefers `OPENAI_API_KEY`; falls back to `ANTHROPIC_API_KEY`
-  when the OpenAI key is unavailable
+- Claude-authored diffs: requires `OPENAI_API_KEY`. There is no Anthropic fallback.
 - Codex/GPT-authored diffs: requires `ANTHROPIC_API_KEY`
 - Live review also requires the corresponding SDK package (`openai` or `anthropic`)
+- Missing credentials, dependencies, or provider execution return `review_unavailable`
+  instead of reporting a successful skipped review
 
 ---
 

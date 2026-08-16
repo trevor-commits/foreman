@@ -134,7 +134,7 @@ def foreman_review(diff: str, author_model: str, branch: str) -> dict[str, Any]:
 
 @mcp.tool()
 def foreman_classify(brief_path: str) -> dict[str, Any]:
-    """Classify a task brief using the Haiku classifier. Returns route, confidence, and reason."""
+    """Classify a task brief using exact Claude Opus 5. Returns route, confidence, and reason."""
     result = subprocess.run(
         [sys.executable, str(SCRIPTS / "foreman-classify.py"), brief_path],
         cwd=REPO_ROOT,
