@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 
 
-CLASSIFIER_MODEL = "claude-haiku-4-5-20251001"
+CLASSIFIER_MODEL = "claude-opus-5"
 VALID_ROUTES = {"cheap", "standard", "escalation"}
 UPWARD_ROUTE = {
     "cheap": "standard",
@@ -102,12 +102,16 @@ def call_anthropic(prompt: str) -> tuple[str, str, bool]:
         result = fallback_result("anthropic package not installed — defaulting to standard")
         return json.dumps(result), CLASSIFIER_MODEL, True
 
-    client = Anthropic()
-    message = client.messages.create(
-        model=CLASSIFIER_MODEL,
-        max_tokens=400,
-        messages=[{"role": "user", "content": prompt}],
-    )
+    try:
+        client = Anthropic()
+        message = client.messages.create(
+            model=CLASSIFIER_MODEL,
+            max_tokens=400,
+            messages=[{"role": "user", "content": prompt}],
+        )
+    except Exception:
+        result = fallback_result("classifier provider unavailable — defaulting to standard")
+        return json.dumps(result), CLASSIFIER_MODEL, True
 
     parts = [block.text for block in message.content if getattr(block, "type", None) == "text"]
     if parts:

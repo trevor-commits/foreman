@@ -10,11 +10,11 @@ If your system Python is externally managed (for example Homebrew Python on macO
 install these packages in a virtual environment instead of forcing a global install.
 
 Environment variables:
-- `ANTHROPIC_API_KEY` for the default reviewer path and the Claude fallback path
+- `ANTHROPIC_API_KEY` for reviewing Codex/GPT-authored diffs with exact Claude Opus 5 and for task classification
 - `OPENAI_API_KEY` for reviewing Claude-authored diffs with `o4-mini`
 
-If `OPENAI_API_KEY` is missing when the author model is Claude, `foreman-review.py`
-falls back to a second Claude model instead of failing immediately.
+The reviewer has no same-provider fallback. A missing required key, missing SDK,
+or provider failure exits nonzero so absent independent review cannot look successful.
 
 ## Live Validation Setup
 
@@ -31,8 +31,8 @@ python3 -m venv .venv && source .venv/bin/activate && pip install -r scripts/req
 ```
 
 Required env vars:
-- `ANTHROPIC_API_KEY` — for reviewer (Claude-authored diffs) and Haiku classifier
-- `OPENAI_API_KEY` — for reviewer (Codex/GPT-authored diffs); optional if Anthropic-only setup
+- `ANTHROPIC_API_KEY` — for reviewer (Codex/GPT-authored diffs) and the exact Opus 5 classifier
+- `OPENAI_API_KEY` — for independent reviewer coverage of Claude-authored diffs
 
 ## Operational Commands
 

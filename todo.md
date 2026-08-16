@@ -43,7 +43,79 @@ Each active branch entry should include:
 - `exit checklist`
 - `delete when` or `retain after close`
 - `retain reason` when not deleting
-- None currently.
+
+### `agent/claude/2026-07-30/agents-first-consolidation`
+- status: merged-pending-cleanup
+- created: 2026-07-30
+- base: `main` at `97b502c793ba361e0cbab2a33c24860bd4294c5c`
+- worktree: none after the primary checkout switched to the cleanup branch
+- source chat: Claude thread `e6ad7a4a-db41-46d9-bbbc-961c1d9458d0`
+- last refreshed by chat: 2026-08-15 lossless branch cleanup (`01a00813-4314-76d0-8dea-2ca70f2126fb`)
+- purpose: consolidate repository instructions under `AGENTS.md` / `AGENTS.project.md`, keep `CLAUDE.md` as a shim, and restore the MCP dependency bound
+- linked issue: `self-contained:` inherited branch cleanup
+- plugin mirror: none; live Linear team remains `TODO: verify`
+- merge expectation: squash-merged to `main` through PR #3
+- merge target: `main`
+- review surface: PR #3; local tree comparison against `origin/main`
+- exit checklist: archive tip, verify exact PR/head binding, delete local and remote refs through audited paths, then record Branch History
+- delete when: exact tip `6cf1425f7530dafc9f4e004d4f1dc0e58ef961ef` is archived and PR #3 merge proof remains contained by `origin/main`
+- retain reason: pending verified cleanup only
+- cleanup command: audited branch-hygiene cleanup with expected-SHA remote lease
+- linked PR/audit/completion record: PR #3; `origin/main` `13b592f3ccf60aa04001d291feab2a109e07a494`
+- pre-existing dirt at task start: no tracked dirt; its former primary checkout retained five ignored paths
+- usable invocation path: repository read order through `AGENTS.md` → `AGENTS.project.md`; Claude routing through `CLAUDE.md`
+- owner lease: none; branch is not worktree-bound
+
+### `codex/er930-opus5-only`
+- status: active-owner-preservation
+- created: 2026-08-11
+- base: `main` at `97b502c793ba361e0cbab2a33c24860bd4294c5c`
+- worktree: `/Users/gillettes/Coding Projects/foreman-worktrees/codex/er930-opus5-only`
+- source chat: Codex task `019ff1e7-a4f1-7841-a6b7-99c783643ff5`
+- last refreshed by chat: 2026-08-15 lossless branch cleanup (`01a00813-4314-76d0-8dea-2ca70f2126fb`)
+- purpose: enforce exact Claude Opus 5 selectors and fail closed when independent review cannot run
+- linked issue: `self-contained:` inherited ER-930 repository work
+- plugin mirror: none; live Linear team remains `TODO: verify`
+- merge expectation: preserve existing commits and integrate current net changes into `main`
+- merge target: `main`
+- review surface: focused reviewer tests plus independent integration review
+- exit checklist: owner commits two dirty files, integration preserves both committed changes, verification passes, `origin/main` contains the result, owner releases lease, broker removes worktree and branch
+- delete when: exact owner releases lease after `origin/main` containment and archive verification
+- retain reason: active owner lease blocks cleanup until release
+- cleanup command: owner release followed by `worktree-owner-lease.py cleanup-released`
+- linked PR/audit/completion record: `TODO: verify`
+- pre-existing dirt at task start: modified tracked files `scripts/foreman-review.py` and `scripts/test-review.py`; no listed untracked or ignored paths
+- usable invocation path: `scripts/foreman-dispatch.sh`, `scripts/foreman-classify.py`, and `scripts/foreman-review.py`
+- owner lease: task `019ff1e7-a4f1-7841-a6b7-99c783643ff5`; lease `392bea34-d735-424c-8f62-5150c56447cf`; state file `.git/codex-worktree-owners/8099c29fc332f55a648b287cefce5e43c8b38e812e5ccdcf9dc1009ad0e4a2d2.json`
+
+### `agent/codex/2026-08-15/branch-cleanup`
+- status: active
+- created: 2026-08-15
+- base: `origin/main` at `13b592f3ccf60aa04001d291feab2a109e07a494`
+- worktree: `/Users/gillettes/Coding Projects/foreman`
+- source chat: 2026-08-15 "merge/delete all branches/worktrees in this repo without losing any work" (`01a00813-4314-76d0-8dea-2ca70f2126fb`)
+- last refreshed by chat: 2026-08-15 inventory and ownership verification
+- purpose: preserve every branch and dirty-path contribution, merge the net work to `main`, then remove fully merged branches and owner-released linked worktrees
+- linked issue: `self-contained:` direct repository cleanup request
+- plugin mirror: none; live Linear team remains `TODO: verify`
+- merge expectation: merge to `main`
+- merge target: `main`
+- review surface: PR #4. GitHub CI plus Cursor Bugbot, GitHub Codex, and CodeRabbit review
+- exit checklist:
+  - [ ] Dirty work committed or preserved in a verified recovery artifact
+  - [ ] Every non-default branch contribution merged or explicitly shown content-equivalent
+  - [ ] Required verification complete
+  - [ ] Branch records and Work Record updated
+  - [ ] Cleanup branch pushed and merged to `main`
+  - [ ] Owner-bound linked worktree released and removed through the cleanup broker
+  - [ ] Fully merged non-default local and remote branches deleted through approved paths
+- delete when: after `main` contains the cleanup result and final recovery checks pass
+- retain reason: n/a
+- cleanup command: owner-bound broker for linked worktrees; audited remote-ref deletion path for remote branches
+- linked PR/audit/completion record: PR #4 (`https://github.com/trevor-commits/foreman/pull/4`)
+- pre-existing dirt at task start: primary checkout had no tracked dirt and five ignored paths (`.DS_Store`, one task brief, one review JSON, two Python bytecode files); linked `codex/er930-opus5-only` worktree had two modified tracked files and no listed ignored paths
+- usable invocation path: n/a; this task changes repository state and records only
+- owner lease: primary checkout has no lease; linked `codex/er930-opus5-only` worktree is owned by task `019ff1e7-a4f1-7841-a6b7-99c783643ff5`, lease `392bea34-d735-424c-8f62-5150c56447cf`, state file `.git/codex-worktree-owners/8099c29fc332f55a648b287cefce5e43c8b38e812e5ccdcf9dc1009ad0e4a2d2.json`; only that owner may release it
 
 ## Branch History
 - branch: `agent/codex/2026-04-11/enrich-reviewer-prompt`
@@ -128,6 +200,14 @@ Each active branch entry should include:
 - When a verification run closes or updates an audit finding, cross-reference the matching audit record entry and the chat or commit that performed the work.
 
 ## Test Evidence Log
+- date: 2026-08-15
+  command(s): `python3 scripts/test-classify.py`; `bash scripts/test-dispatch.sh`; `bash scripts/test-hooks.sh`; `python3 scripts/test-review.py`; Bash syntax; Python compile; workflow YAML parse; `git diff --check`
+  result: pass — provider failures fall back safely, dispatcher and hook base selection prefer current `origin/main`, author provenance is preserved, secure temporary paths are used, and fail-closed review returns exit code 2
+  log/PR reference: PR #4 review fixes; Cursor Bugbot, GitHub Codex, and CodeRabbit threads recorded in the Feedback Decision Log
+- date: 2026-08-11
+  command(s): `python3 scripts/test-review.py`; `python3 -m py_compile scripts/foreman-review.py scripts/foreman-classify.py`; `bash -n scripts/foreman-dispatch.sh hooks/commit-msg`; Global Implementations `scripts/claude-opus5-active-selectors.test.sh` against the isolated rollout worktrees
+  result: pass — reviewer routing uses exact `claude-opus-5`, rejects earlier Anthropic selectors before credentials, preserves independent OpenAI review for Claude-authored work, and the fleet selector audit reports 3 passed / 0 failed
+  log/PR reference: branch `codex/er930-opus5-only`; global ER-930
 - date: 2026-04-11
   command(s): `bash scripts/foreman-drift-check.sh --repos '/Users/gillettes/Coding Projects/Taxes /Users/gillettes/Coding Projects/bible-ai'`; `python3 scripts/test-review.py`; `bash scripts/test-hooks.sh`; `bash -n hooks/pre-push`; `python3 -m py_compile scripts/foreman-mcp-server.py`; `python3 -m py_compile scripts/foreman-calibration.py`
   result: pass — downstream recheck reports 14 files in sync with 0 missing and 0 drifted across `Taxes` and `bible-ai`, and the full local verification block exits 0 after the MCP skip-guard change
@@ -267,8 +347,10 @@ Each active branch entry should include:
 | Pre-push gate | `bash -n hooks/pre-push && bash -n hooks/commit-msg` | Every push | Must pass (syntax valid) |
 | Reviewer script compile | `python3 -m py_compile scripts/foreman-review.py` | Every push | Must pass |
 | Reviewer smoke tests | `python3 scripts/test-review.py` | Every push | All tests PASS |
+| Classifier smoke tests | `python3 scripts/test-classify.py` | Every push after classifier changes | All tests PASS |
 | Hook smoke tests | `bash scripts/test-hooks.sh` | Every push after hook changes | All tests PASS |
 | Hosted CI tooling suite | `.github/workflows/test-foreman-tooling.yml` | Every push and PR to `main` | Both GitHub Actions jobs pass |
+| Dispatcher provenance regression | `bash scripts/test-dispatch.sh` | Every push and PR after dispatcher changes | All tests PASS |
 | Dispatcher syntax | `bash -n scripts/foreman-dispatch.sh` | Every push | Must pass |
 | Classifier compile | `python3 -m py_compile scripts/foreman-classify.py` | Every push | Must pass |
 | Hard-gate calibration | `python3 scripts/foreman-calibration.py --days 14` | Once on 2026-04-24 (burn-in checkpoint) | READY verdict from the script |
@@ -285,6 +367,16 @@ Record outside feedback and the resulting reasoning once, then update the same e
   - `implementation/disposition chat`
   - `linked branch / audit / suggestion / test evidence`
 - Reuse or update an existing entry when the same feedback thread comes back instead of opening duplicate records.
+- 2026-08-15 — PR #4 routing and documentation review
+  - feedback source: Cursor Bugbot, GitHub Codex, and CodeRabbit
+  - feedback summary: The `cheap` classifier path overwrote author provenance; review bases could drift; provider failures, whitespace guards, temporary logs, and fail-closed assertions needed hardening; reviewer docs and the canonical branch ledger were stale.
+  - evaluation chat: Codex task `01a00813-4314-76d0-8dea-2ca70f2126fb`
+  - reasoning response: Accepted the reproducible findings and added focused regressions. Rejected renaming `codex/er930-opus5-only` because its active lease binds that exact branch and worktree; the safe disposition is archive, merge proof, owner release, then deletion.
+  - decision status: accepted except for the lease-unsafe historical branch rename
+  - implementation/disposition chat: same task
+  - linked evidence: `scripts/test-classify.py`, `scripts/test-dispatch.sh`, `scripts/test-hooks.sh`, and PR threads `PRRT_kwDOR-dGxc6Zj5-0`, `PRRT_kwDOR-dGxc6Zj6Fj`, `PRRT_kwDOR-dGxc6Zj6Fl`, `PRRT_kwDOR-dGxc6Zj64t`, `PRRT_kwDOR-dGxc6Zj64y`, `PRRT_kwDOR-dGxc6Zj642`, `PRRT_kwDOR-dGxc6Zj645`, `PRRT_kwDOR-dGxc6Zj648`, `PRRT_kwDOR-dGxc6Zj64-`, and `PRRT_kwDOR-dGxc6Zj9aL`
+  - systemic disposition: repository-local routing and documentation drift, covered by regression tests and CI
+- 2026-08-11 | feedback source: Trevor, Codex thread `019ff1e7-a4f1-7841-a6b7-99c783643ff5` | feedback summary: all Claude execution should use Opus 5 globally | reasoning response: accepted for active execution paths; pin the exact public selector, remove same-provider lower-tier fallbacks, and retain independent review by routing Claude-authored work to OpenAI | decision status: accepted / implemented on `codex/er930-opus5-only` | linked evidence: Work Record `2026-08-11 — exact Claude Opus 5 routing`; Test Evidence above; global ER-930
 
 ## Linear Issue Ledger
 If it's not here, it isn't remembered.
@@ -319,6 +411,21 @@ Use one entry per bounded task, fix, audit, or review that would otherwise lose 
 - led to:
 - linear:
 ```
+
+### 2026-08-11 — exact Claude Opus 5 routing
+- Problem: Foreman's classifier, dispatcher, and Anthropic reviewer could select Haiku, Sonnet, or Opus 4.x after Trevor established exact Opus 5 as the global Claude model.
+- Reasoning: A global launcher cannot protect direct Anthropic SDK calls or repository-local model routing. Claude-authored work also cannot be independently reviewed by another Claude tier once all Claude work uses one exact model.
+- Diagnosis inputs: active Foreman scripts, reviewer tests, current governance docs, and the global active-selector scan.
+- Implementation inputs: `scripts/foreman-review.py`, `scripts/foreman-classify.py`, `scripts/foreman-dispatch.sh`, `scripts/test-review.py`, hook examples, and current model-routing docs.
+- Fix: pinned every Anthropic call to `claude-opus-5`, rejected stale explicit selectors before credentials, made classification adjust reasoning instead of model family, and routed Claude-authored review to OpenAI without an Anthropic fallback.
+- Self-audit:
+  - method: focused unit, syntax, compile, diff-hygiene, and cross-repository selector checks.
+  - outcome: green; no active Foreman Claude selector below Opus 5 remains.
+  - did not verify: a live provider response because the Claude account was weekly-rate-limited during the rollout.
+- by: Codex thread `019ff1e7-a4f1-7841-a6b7-99c783643ff5`.
+- triggered by: Trevor's global Opus 5-only direction; global ER-930.
+- led to: synchronized rollout branches in Taxes and bible-ai.
+- linear: repo-only / self-contained.
 
 ### 2026-04-16 — local GIL-37 rollout record
 - Problem: This repo had the shared Continuity / Coherence / Linear-Core baseline on disk, but its local durable record was still blank: `todo.md` had the new `Work Record Log` and `Linear Issue Ledger` sections with no repo-local pointer explaining why those surfaces landed here.

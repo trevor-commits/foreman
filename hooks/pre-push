@@ -100,13 +100,13 @@ resolve_review_base_ref() {
     return 1
   fi
 
-  if git show-ref --verify --quiet "refs/heads/main"; then
-    printf '%s\n' "main"
+  if git show-ref --verify --quiet "refs/remotes/origin/main"; then
+    printf '%s\n' "origin/main"
     return 0
   fi
 
-  if git show-ref --verify --quiet "refs/remotes/origin/main"; then
-    printf '%s\n' "origin/main"
+  if git show-ref --verify --quiet "refs/heads/main"; then
+    printf '%s\n' "main"
     return 0
   fi
 
@@ -192,9 +192,11 @@ fi
 # ── Results ───────────────────────────────────────────────────────────────────
 echo ""
 echo "    Gate results:"
-for line in "${RESULTS[@]}"; do
-  echo "  $line"
-done
+if [ "${#RESULTS[@]}" -gt 0 ]; then
+  for line in "${RESULTS[@]}"; do
+    echo "  $line"
+  done
+fi
 echo ""
 
 if [ "$GATE_PASSED" = false ]; then
@@ -206,7 +208,10 @@ if [ "$GATE_PASSED" = false ]; then
 fi
 
 # ── Warn if no gates actually ran ─────────────────────────────────────────────
-REAL_GATES="$(printf '%s\n' "${RESULTS[@]}" | awk '/✅|❌/ {count++} END {print count+0}')"
+REAL_GATES=0
+if [ "${#RESULTS[@]}" -gt 0 ]; then
+  REAL_GATES="$(printf '%s\n' "${RESULTS[@]}" | awk '/✅|❌/ {count++} END {print count+0}')"
+fi
 if [ "$REAL_GATES" -eq 0 ]; then
   echo "⚠️   foreman: no gates ran — no test/lint/build tools detected."
   echo "    Consider adding tests. Push proceeding, but this branch has no"
@@ -235,7 +240,7 @@ else
     fi
 
     for trailer in "${REQUIRED_TRAILERS[@]}"; do
-      if ! printf '%s\n' "$commit_msg" | grep -qiE "^${trailer}:[[:space:]].+"; then
+      if ! grep -qiE "^${trailer}:[[:space:]].+" <<<"$commit_msg"; then
         TRAILER_ERRORS+=("  ❌  commit ${commit_hash:0:7}: missing '$trailer:' trailer")
       fi
     done
@@ -266,15 +271,20 @@ elif [ ! -f "$REVIEWER_SCRIPT" ]; then
   echo "Reviewer: skipped (review script not available)"
 elif ! REVIEW_DIFF="$(git diff "${REVIEW_BASE_REF}"...HEAD 2>/dev/null)"; then
   echo "Reviewer: skipped (unable to diff against ${REVIEW_BASE_REF})"
-elif [[ -z "${REVIEW_DIFF//[[:space:]]/}" ]]; then
+elif ! grep -q '[^[:space:]]' <<<"$REVIEW_DIFF"; then
   echo "Reviewer: skipped (empty diff)"
 else
   :
 fi
 
-if [[ -n "${REVIEW_DIFF:-}" ]]; then
+if [[ -n "${REVIEW_DIFF:-}" ]] && grep -q '[^[:space:]]' <<<"$REVIEW_DIFF"; then
   BRANCH_COMMIT_COUNT="$(git rev-list --count "${REVIEW_BASE_REF}"..HEAD 2>/dev/null || echo 0)"
-  mapfile -t AGENT_MODELS < <(
+  AGENT_MODELS=()
+  while IFS= read -r agent_model; do
+    if [[ -n "$agent_model" ]]; then
+      AGENT_MODELS+=("$agent_model")
+    fi
+  done < <(
     git log "${REVIEW_BASE_REF}"..HEAD --format=%B | \
       sed -n 's/^Agent:[[:space:]]*//p' | sort | uniq -c | sort -rn | \
       awk '{print $2}' | head -5
