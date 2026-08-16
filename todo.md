@@ -44,6 +44,50 @@ Each active branch entry should include:
 - `delete when` or `retain after close`
 - `retain reason` when not deleting
 
+### `agent/claude/2026-07-30/agents-first-consolidation`
+- status: merged-pending-cleanup
+- created: 2026-07-30
+- base: `main` at `97b502c793ba361e0cbab2a33c24860bd4294c5c`
+- worktree: none after the primary checkout switched to the cleanup branch
+- source chat: Claude thread `e6ad7a4a-db41-46d9-bbbc-961c1d9458d0`
+- last refreshed by chat: 2026-08-15 lossless branch cleanup (`01a00813-4314-76d0-8dea-2ca70f2126fb`)
+- purpose: consolidate repository instructions under `AGENTS.md` / `AGENTS.project.md`, keep `CLAUDE.md` as a shim, and restore the MCP dependency bound
+- linked issue: `self-contained:` inherited branch cleanup
+- plugin mirror: none; live Linear team remains `TODO: verify`
+- merge expectation: squash-merged to `main` through PR #3
+- merge target: `main`
+- review surface: PR #3; local tree comparison against `origin/main`
+- exit checklist: archive tip, verify exact PR/head binding, delete local and remote refs through audited paths, then record Branch History
+- delete when: exact tip `6cf1425f7530dafc9f4e004d4f1dc0e58ef961ef` is archived and PR #3 merge proof remains contained by `origin/main`
+- retain reason: pending verified cleanup only
+- cleanup command: audited branch-hygiene cleanup with expected-SHA remote lease
+- linked PR/audit/completion record: PR #3; `origin/main` `13b592f3ccf60aa04001d291feab2a109e07a494`
+- pre-existing dirt at task start: no tracked dirt; its former primary checkout retained five ignored paths
+- usable invocation path: repository read order through `AGENTS.md` → `AGENTS.project.md`; Claude routing through `CLAUDE.md`
+- owner lease: none; branch is not worktree-bound
+
+### `codex/er930-opus5-only`
+- status: active-owner-preservation
+- created: 2026-08-11
+- base: `main` at `97b502c793ba361e0cbab2a33c24860bd4294c5c`
+- worktree: `/Users/gillettes/Coding Projects/foreman-worktrees/codex/er930-opus5-only`
+- source chat: Codex task `019ff1e7-a4f1-7841-a6b7-99c783643ff5`
+- last refreshed by chat: 2026-08-15 lossless branch cleanup (`01a00813-4314-76d0-8dea-2ca70f2126fb`)
+- purpose: enforce exact Claude Opus 5 selectors and fail closed when independent review cannot run
+- linked issue: `self-contained:` inherited ER-930 repository work
+- plugin mirror: none; live Linear team remains `TODO: verify`
+- merge expectation: preserve existing commits and integrate current net changes into `main`
+- merge target: `main`
+- review surface: focused reviewer tests plus independent integration review
+- exit checklist: owner commits two dirty files, integration preserves both committed changes, verification passes, `origin/main` contains the result, owner releases lease, broker removes worktree and branch
+- delete when: exact owner releases lease after `origin/main` containment and archive verification
+- retain reason: active owner lease blocks cleanup until release
+- cleanup command: owner release followed by `worktree-owner-lease.py cleanup-released`
+- linked PR/audit/completion record: `TODO: verify`
+- pre-existing dirt at task start: modified tracked files `scripts/foreman-review.py` and `scripts/test-review.py`; no listed untracked or ignored paths
+- usable invocation path: `scripts/foreman-dispatch.sh`, `scripts/foreman-classify.py`, and `scripts/foreman-review.py`
+- owner lease: task `019ff1e7-a4f1-7841-a6b7-99c783643ff5`; lease `392bea34-d735-424c-8f62-5150c56447cf`; state file `.git/codex-worktree-owners/8099c29fc332f55a648b287cefce5e43c8b38e812e5ccdcf9dc1009ad0e4a2d2.json`
+
 ### `agent/codex/2026-08-15/branch-cleanup`
 - status: active
 - created: 2026-08-15
