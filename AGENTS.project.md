@@ -378,7 +378,7 @@ See DECISIONS.md for full history.
 
 ## 15. Additional Gotchas (merged from CLAUDE.md; net-new beyond §§ 1–2, 9 above)
 
-- The pre-push gate is heuristic autodetection (pytest/ruff/mypy, npm, or make). It may run nothing if no test runner is found. It is not a guaranteed full-stack gate.
+- The pre-push gate is heuristic autodetection (pytest/ruff/mypy, npm, or make). In this template repo it also runs `scripts/verify.sh` when present. Other stacks may still run nothing if no test runner is found — not a guaranteed full-stack gate.
 - The pre-push hook resolves its review diff base from local `main` first, then `origin/main`, and skips reviewer execution only if neither ref exists, `python3` is unavailable, or the review script is missing.
 - The pre-push hook automatically amends the last commit's `Reviewed-By` trailer when the reviewer runs successfully, then stops that push so the next `git push` sends the amended SHA. If you push with `--no-verify`, `Reviewed-By` stays `none-yet`.
 - `scripts/foreman-review.py` skips live review if the required API key or SDK package is missing and writes `.agent-runs/last-review.json` whenever it can persist a review payload locally.

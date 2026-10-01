@@ -18,6 +18,8 @@ Thumbs.db
 # Python caches
 __pycache__/
 *.pyc
+.venv/
+venv/
 
 # Hook backups (created by hooks/install.sh)
 .git/hooks/*.bak
