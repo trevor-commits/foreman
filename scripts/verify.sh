@@ -121,6 +121,22 @@ if ! grep -q 'scripts/verify.sh' hooks/pre-push; then
   echo "verify: hooks/pre-push must run scripts/verify.sh when the template self-check is enabled" >&2
   exit 1
 fi
+if ! grep -q 'run_gate "foreman verify"' hooks/pre-push; then
+  echo "verify: hooks/pre-push must run_gate foreman verify (template self-check)" >&2
+  exit 1
+fi
+if ! grep -qE '^test:\s*verify' Makefile; then
+  echo "verify: Makefile 'test' target must depend on verify" >&2
+  exit 1
+fi
+if [[ ! -x scripts/verify.sh ]]; then
+  echo "verify: scripts/verify.sh must be executable (chmod +x)" >&2
+  exit 1
+fi
+if ! grep -q 'LOCAL_VERIFY.md' hooks/install.sh; then
+  echo "verify: hooks/install.sh must point operators to docs/LOCAL_VERIFY.md" >&2
+  exit 1
+fi
 
 echo "▸ reviewer smoke tests"
 python3 scripts/test-review.py
@@ -208,6 +224,31 @@ checkout_steps = [
 ]
 assert checkout_steps, "test-foreman-tooling.yml: missing actions/checkout step"
 print("    test-foreman-tooling.yml: CI parity contract OK")
+
+with open(".github/workflows/foreman-trailer-check.yml", encoding="utf-8") as f:
+    trailer = yaml.safe_load(f)
+
+trailer_steps = trailer.get("jobs", {}).get("trailer-check", {}).get("steps") or []
+checkout = [
+    s
+    for s in trailer_steps
+    if isinstance(s, dict) and s.get("uses", "").startswith("actions/checkout")
+]
+assert checkout, "foreman-trailer-check.yml: missing actions/checkout step"
+checkout_with = checkout[0].get("with") or {}
+assert checkout_with.get("fetch-depth") == 0, (
+    "foreman-trailer-check.yml: checkout fetch-depth must be 0 for commit-range trailer scans"
+)
+run_steps = [
+    s for s in trailer_steps if isinstance(s, dict) and "run" in s
+]
+assert run_steps, "foreman-trailer-check.yml: missing inline trailer validation run step"
+trailer_body = run_steps[0]["run"]
+for trailer_name in ("Agent", "Thread", "Task", "Verified-By"):
+    assert trailer_name in trailer_body, (
+        f"foreman-trailer-check.yml: run step must validate {trailer_name} trailer"
+    )
+print("    foreman-trailer-check.yml: hosted trailer contract OK")
 PY
 
 echo "▸ operator doc cross-links"

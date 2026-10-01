@@ -20,7 +20,19 @@ Run from the **repository root**:
 
 **Failure:** any step prints an error and exits `1` — fix the reported step and re-run step 2.
 
-**This pass (cloud agent `bc-552fe519-19f4-5c20-aee1-ede8e07c9827`):** steps 1–3 — **pass** (~40s on a fresh cloud image after pip install).
+**Latest offline run (cloud agent `bc-31b4964a-1650-5af4-902a-753a30294110`):** steps 1–3 — **pass** (~12s after deps; ~40s first install on a fresh cloud image).
+
+### Fresh clone playbook
+
+```bash
+git clone https://github.com/trevor-commits/foreman.git
+cd foreman
+bash hooks/install.sh
+FOREMAN_VERIFY_INSTALL=1 bash scripts/verify.sh
+bash scripts/verify.sh   # repeat before every push
+```
+
+Use a branch name matching `agent/<tool>/<YYYY-MM-DD>/<slug>` before opening a PR (pre-push warns otherwise).
 
 ### Copy-paste block (offline after deps)
 
@@ -34,6 +46,9 @@ bash scripts/verify.sh && make verify             # every change before push
 
 `scripts/test-review.py` may print `Reviewer error: OPENAI_API_KEY is not set` on stderr while
 offline cases still report `PASS:` — verify does **not** require API keys.
+
+`scripts/test-hooks.sh` may print git hints about the default branch name (`master` vs `main`) while
+creating temp repos — hook cases still report `PASS:`.
 
 ### macOS / PEP 668
 
@@ -77,7 +92,8 @@ API keys (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`) are **not** read by `verify.sh`
 | `scripts/test-hooks.sh` | Temp-repo `commit-msg` + `pre-push` trailer behavior |
 | `scripts/test-dispatch.sh` | Dispatcher branch/base selection |
 | MCP shim / server smoke | Tool registration without starting a server |
-| Workflow YAML checks | `foreman-trailer-check.yml` + **CI parity** for `test-foreman-tooling.yml` (checkout, Python 3.12, env) |
+| Workflow YAML checks | `foreman-trailer-check.yml` (checkout `fetch-depth: 0`, required trailers) + **CI parity** for `test-foreman-tooling.yml` (checkout, Python 3.12, env) |
+| `hooks/install.sh` cross-link | Post-install message points to `docs/LOCAL_VERIFY.md` |
 | Operator doc cross-links | `README.md`, `scripts/README.md`, `VALIDATION_CHECKLIST.md` reference `docs/LOCAL_VERIFY.md` |
 
 ## CI parity contract
@@ -108,9 +124,28 @@ Surveyed **open drafts only** — no merges, no API keys, no secrets in docs.
 | PR | Branch | Focus | Overlap / sequencing |
 |----|--------|-------|----------------------|
 | [#7](https://github.com/trevor-commits/foreman/pull/7) | `cursor/usage-burn-reliability-741a` | `scripts/verify.sh`, `Makefile`, pre-push self-check, CI → verify, `docs/LOCAL_VERIFY.md` | Land **first** — defines verify contract |
-| [#6](https://github.com/trevor-commits/foreman/pull/6) | `cursor/drift-discovery-d2e1` | `foreman-drift-check` discovery hardening + `test-drift-discovery.py` | Touches `test-foreman-tooling.yml`, `scripts/README.md`, `todo.md` — **rebase on #7** |
+| [#6](https://github.com/trevor-commits/foreman/pull/6) | `cursor/drift-discovery-d2e1` | `foreman_drift_discovery.py`, `test-drift-discovery.py`, drift-check shell wiring | Touches `test-foreman-tooling.yml`, `scripts/README.md`, `todo.md` — **rebase on #7** |
 
-**Recommendation:** Merge reliability/verify (#7) before drift-discovery (#6). After #7 lands, rebase #6 and wire `scripts/test-drift-discovery.py` into `verify.sh` (today #6 runs it only in its own workflow copy).
+**File overlap (#6 vs #7):**
+
+| Path | #7 | #6 | Resolution |
+|------|----|----|------------|
+| `.github/workflows/test-foreman-tooling.yml` | Thin `verify.sh` wrapper | Adds drift test step (duplicate contract) | Keep #7 shape; add `python3 scripts/test-drift-discovery.py` inside `verify.sh` after rebase |
+| `scripts/README.md` | Local verify section | Drift-check note | Merge both doc blocks |
+| `todo.md` | Verify evidence log | Branch ledger row | Combine entries on rebase |
+
+**Recommendation:** Land reliability/verify (#7) before drift-discovery (#6). After #7 merges, rebase #6 onto `main`, drop any extra workflow `run:` steps, and extend `verify.sh` with `python3 scripts/test-drift-discovery.py` (offline fixtures only — no live `$HOME` scan).
+
+**Rebase sketch (operator, after #7 merges):**
+
+```bash
+git fetch origin main
+git checkout cursor/drift-discovery-d2e1
+git rebase origin/main
+# resolve test-foreman-tooling.yml → single verify.sh step (same as #7)
+# add drift test invocation to scripts/verify.sh
+bash scripts/verify.sh
+```
 
 **Constraints for this burn:** draft-only, no merge, no live API keys, no `foreman-drift-check.sh` against real `$HOME` trees.
 
