@@ -40,6 +40,7 @@ jobs:
           python3 -m py_compile scripts/foreman-mcp-server.py
           python3 -m py_compile scripts/foreman-calibration.py 2>/dev/null || \
             echo "foreman-calibration.py not yet present — skipping"
+          python3 -m py_compile scripts/foreman_drift_discovery.py
 
       - name: Reviewer smoke tests
         run: python3 scripts/test-review.py
@@ -52,6 +53,9 @@ jobs:
 
       - name: Dispatcher routing tests
         run: bash scripts/test-dispatch.sh
+
+      - name: Drift discovery tests
+        run: python3 scripts/test-drift-discovery.py
 
       - name: MCP shim help check
         run: python3 scripts/foreman-mcp-shim.py --help 2>&1 | grep -q "tool" || \

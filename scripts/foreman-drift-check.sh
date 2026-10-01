@@ -108,21 +108,8 @@ discover_repos() {
     return 0
   fi
 
-  find "$HOME" \
-    -maxdepth 5 \
-    -type f \
-    -name "CLAUDE.md" \
-    ! -path "*/Library/*" \
-    ! -path "*/.git/*" \
-    -print0 2>/dev/null | \
-  while IFS= read -r -d '' claude_file; do
-    repo_dir="$(dirname "$claude_file")"
-    repo_real="$(resolve_path "$repo_dir")"
-    if [[ "$repo_real" == "$FOREMAN_ROOT" ]]; then
-      continue
-    fi
-    printf '%s\n' "$repo_real"
-  done
+  local search_home="${FOREMAN_DRIFT_HOME:-$HOME}"
+  python3 "${SCRIPT_DIR}/foreman_drift_discovery.py" "$search_home" "$FOREMAN_ROOT"
 }
 
 while [[ $# -gt 0 ]]; do

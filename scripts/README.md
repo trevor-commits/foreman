@@ -40,7 +40,7 @@ Required env vars:
 - `scripts/foreman-status.sh` prints the current branch's governance state, last commit trailers, last review verdict, ledger row status, and active gate env vars
 - `scripts/foreman-merge-check.sh` evaluates the merge conditions and exits `0` only when the branch is governance-ready for PR
 - `scripts/foreman-close.sh <branch> <merged|abandoned> [reason]` moves a branch from Active Branches to Closed Branches and, for merged branches, attempts local and remote branch deletion
-- `scripts/foreman-drift-check.sh [--fix] [--repos "..."]` detects drift between foreman canonical governance files and downstream repos, and can auto-sync missing or drifted files without committing them
+- `scripts/foreman-drift-check.sh [--fix] [--repos "..."]` detects drift between foreman canonical governance files and downstream repos, and can auto-sync missing or drifted files without committing them. Auto-discovery skips non-project `CLAUDE.md` locations (for example `~/.claude`, Desktop, and editor extension caches) and only includes git repos that already carry foreman governance markers (`scripts/foreman-review.py` or `.github/workflows/foreman-trailer-check.yml`). Override the scan root with `FOREMAN_DRIFT_HOME` when testing discovery locally.
 - `scripts/foreman-pr-prep.sh` generates a pre-filled GitHub PR description from the current branch state
 - `scripts/foreman-mcp-server.py` starts the FastMCP server that exposes foreman's governance tools to MCP clients such as Claude Code and Claude desktop
 
