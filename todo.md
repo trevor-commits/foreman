@@ -171,6 +171,10 @@ Each active branch entry should include:
 - When a verification run closes or updates an audit finding, cross-reference the matching audit record entry and the chat or commit that performed the work.
 
 ## Test Evidence Log
+- date: 2026-10-01
+  command(s): `FOREMAN_VERIFY_INSTALL=1 bash scripts/verify.sh`; `bash scripts/verify.sh` (repeat after deps installed)
+  result: pass — local CI-parity verify covers hook/dispatcher/review/classify smoke tests, MCP import, and trailer-check workflow YAML
+  log/PR reference: branch `cursor/usage-burn-reliability-741a`; cloud agent `bc-c05c5c91-33ee-50e6-8b29-6c831ee3741a`
 - date: 2026-08-15
   command(s): `python3 scripts/test-classify.py`; `bash scripts/test-dispatch.sh`; `bash scripts/test-hooks.sh`; `python3 scripts/test-review.py`; Bash syntax; Python compile; workflow YAML parse; `git diff --check`
   result: pass — provider failures fall back safely, dispatcher and hook base selection prefer current `origin/main`, author provenance is preserved, secure temporary paths are used, and fail-closed review returns exit code 2

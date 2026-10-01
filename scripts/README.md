@@ -1,5 +1,24 @@
 # Foreman Scripts
 
+## Local verification
+
+Run the same checks as GitHub Actions `test-foreman-tooling.yml`:
+
+```bash
+bash scripts/verify.sh
+```
+
+Install deps on first run (network required once):
+
+```bash
+FOREMAN_VERIFY_INSTALL=1 bash scripts/verify.sh
+```
+
+Or `make verify` from the repo root. After `hooks/install.sh`, `pre-push` runs `scripts/verify.sh`
+automatically when that file exists (this template repo).
+
+---
+
 Install Python reviewer dependencies with:
 
 ```bash

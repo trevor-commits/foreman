@@ -81,7 +81,7 @@ if [ "$REVIEW_WARNING" = true ]; then
   echo ""
   echo "⚠️   foreman: no second-model review on this commit"
   echo "    'Reviewed-By: none-yet' — remember to get a cross-model review"
-  echo "    before merging. See AGENTS.md §3 for merge conditions."
+  echo "    before merging. See AGENTS.project.md §3 for merge conditions."
   echo ""
   # Warning only — does not block the commit
 fi

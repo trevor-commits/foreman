@@ -39,6 +39,8 @@ Foreman fixes all three with files and conventions, not new infrastructure.
 | `hooks/commit-msg` | Rejects commits missing required trailers |
 | `hooks/pre-push` | Runs tests/lint/build gate; blocks direct push to main |
 | `hooks/install.sh` | Installs the two hooks into `.git/hooks/` |
+| `scripts/verify.sh` | Local CI-parity checks (offline after deps install; no API keys) |
+| `Makefile` | Optional `make verify` / `make test` wrapper for this template repo |
 | `.gitignore` | Ignores agent run logs, OS files, secrets |
 
 ---
@@ -87,6 +89,24 @@ curl -so .github/PULL_REQUEST_TEMPLATE.md \
 
 bash hooks/install.sh
 ```
+
+### Verify this repo after clone
+
+Foreman’s own `pre-push` hook had no Python/Node project at the repo root, so it used to
+run **no** test gates here. `scripts/verify.sh` is the supported local path (same steps as
+`.github/workflows/test-foreman-tooling.yml`).
+
+```bash
+# One-time Python deps (use a venv on macOS if system Python is externally managed)
+python3 -m pip install -r scripts/requirements.txt
+# or: FOREMAN_VERIFY_INSTALL=1 bash scripts/verify.sh
+
+bash scripts/verify.sh
+# equivalent: make verify
+```
+
+Reviewer/classifier API keys are **not** required for verify — smoke tests use fixtures.
+Live review still needs `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` (see `scripts/README.md`).
 
 ---
 

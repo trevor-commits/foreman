@@ -182,8 +182,13 @@ if [ -f "package.json" ]; then
   fi
 fi
 
+# ── Foreman template self-check ─────────────────────────────────────────────
+if [ -f "scripts/verify.sh" ]; then
+  run_gate "foreman verify" "bash scripts/verify.sh 2>&1"
+fi
+
 # ── Makefile gates ────────────────────────────────────────────────────────────
-if [ -f "Makefile" ]; then
+if [ -f "Makefile" ] && [ ! -f "scripts/verify.sh" ]; then
   if make -n test &>/dev/null 2>&1; then
     run_gate "make test" "make test 2>&1"
   fi
@@ -215,7 +220,7 @@ fi
 if [ "$REAL_GATES" -eq 0 ]; then
   echo "⚠️   foreman: no gates ran — no test/lint/build tools detected."
   echo "    Consider adding tests. Push proceeding, but this branch has no"
-  echo "    external verification. See AGENTS.md §3 for merge conditions."
+  echo "    external verification. See AGENTS.project.md §3 for merge conditions."
   echo ""
 fi
 
