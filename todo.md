@@ -172,6 +172,10 @@ Each active branch entry should include:
 
 ## Test Evidence Log
 - date: 2026-10-01
+  command(s): `FOREMAN_VERIFY_INSTALL=1 bash scripts/verify.sh`; `bash scripts/verify.sh` (deeper pass — venv PATH, workflow CI-parity assert)
+  result: pass — verify enforces `test-foreman-tooling.yml` → `verify.sh` delegation; docs in `docs/LOCAL_VERIFY.md`
+  log/PR reference: PR #7; cloud agent `bc-91855acc-e9de-5d6b-bcbf-05233bba7a7d`
+- date: 2026-10-01
   command(s): `FOREMAN_VERIFY_INSTALL=1 bash scripts/verify.sh`; `bash scripts/verify.sh` (repeat after deps installed)
   result: pass — local CI-parity verify covers hook/dispatcher/review/classify smoke tests, MCP import, and trailer-check workflow YAML
   log/PR reference: branch `cursor/usage-burn-reliability-741a`; cloud agent `bc-c05c5c91-33ee-50e6-8b29-6c831ee3741a`

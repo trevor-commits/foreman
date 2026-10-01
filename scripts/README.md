@@ -2,6 +2,8 @@
 
 ## Local verification
 
+Full operator guide: `docs/LOCAL_VERIFY.md` (CI parity contract, gaps, draft-PR survey).
+
 Run the same checks as GitHub Actions `test-foreman-tooling.yml`:
 
 ```bash

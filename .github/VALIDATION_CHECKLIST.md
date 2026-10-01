@@ -1,5 +1,13 @@
 ## GitHub Actions Hosted Runner Validation
 
+Before opening trailer-check test PRs, run local CI parity (no API keys):
+
+```bash
+FOREMAN_VERIFY_INSTALL=1 bash scripts/verify.sh
+```
+
+See `docs/LOCAL_VERIFY.md` for the full verify matrix, open-draft survey notes, and troubleshooting.
+
 Run this once to confirm `foreman-trailer-check.yml` works on GitHub's infrastructure.
 
 ### Test A — Valid commit passes

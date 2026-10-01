@@ -21,6 +21,11 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
+# Prefer an in-repo venv when present (common on macOS / PEP 668 systems).
+if [[ -x "$ROOT_DIR/.venv/bin/python3" ]]; then
+  export PATH="$ROOT_DIR/.venv/bin:$PATH"
+fi
+
 require_python() {
   if ! command -v python3 >/dev/null 2>&1; then
     echo "verify: python3 is required" >&2
@@ -119,18 +124,45 @@ assert tools, "expected at least one MCP tool"
 print(f"    tools: {tools}")
 PY
 
-echo "▸ trailer-check workflow YAML"
+echo "▸ GitHub Actions workflow YAML"
 python3 <<'PY'
 import yaml
+from pathlib import Path
 
-with open(".github/workflows/foreman-trailer-check.yml", encoding="utf-8") as f:
-    doc = yaml.safe_load(f)
 
-# YAML 1.1 treats bare `on` as boolean True in some parsers.
-triggers = doc.get(True) if True in doc else doc.get("on") or {}
-assert triggers, "foreman-trailer-check.yml: missing on: triggers"
-print("    foreman-trailer-check.yml: valid YAML")
-print(f"    triggers: {list(triggers.keys())}")
+def workflow_triggers(doc: dict) -> dict:
+    # YAML 1.1 treats bare `on` as boolean True in some parsers.
+    return doc.get(True) if True in doc else doc.get("on") or {}
+
+
+for path in (
+    ".github/workflows/foreman-trailer-check.yml",
+    ".github/workflows/test-foreman-tooling.yml",
+):
+    with open(path, encoding="utf-8") as f:
+        doc = yaml.safe_load(f)
+    triggers = workflow_triggers(doc)
+    assert triggers, f"{path}: missing on: triggers"
+    print(f"    {path}: valid YAML (triggers: {list(triggers.keys())})")
+
+with open(".github/workflows/test-foreman-tooling.yml", encoding="utf-8") as f:
+    tooling = yaml.safe_load(f)
+
+job = tooling.get("jobs", {}).get("test-scripts", {})
+steps = job.get("steps") or []
+run_steps = [s for s in steps if isinstance(s, dict) and "run" in s]
+assert len(run_steps) == 1, (
+    "test-foreman-tooling.yml: expected exactly one run: step (delegate to verify.sh)"
+)
+run_body = run_steps[0]["run"]
+assert "scripts/verify.sh" in run_body, (
+    "test-foreman-tooling.yml: run step must invoke scripts/verify.sh"
+)
+env = run_steps[0].get("env") or {}
+assert env.get("FOREMAN_VERIFY_INSTALL") == "1", (
+    "test-foreman-tooling.yml: FOREMAN_VERIFY_INSTALL=1 required for hosted parity"
+)
+print("    test-foreman-tooling.yml: CI parity contract OK")
 PY
 
 echo ""

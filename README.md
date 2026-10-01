@@ -108,6 +108,8 @@ bash scripts/verify.sh
 Reviewer/classifier API keys are **not** required for verify — smoke tests use fixtures.
 Live review still needs `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` (see `scripts/README.md`).
 
+Details: `docs/LOCAL_VERIFY.md` (step list, CI parity contract, hosted gaps, draft-PR survey).
+
 ---
 
 ## The Commit Trailer Schema
