@@ -35,6 +35,22 @@ Keep materially new suggestions here so they survive beyond the current chat.
 ## Active Branch Ledger
 Keep one entry per non-trivial active branch so any chat can see why it exists, which chat opened or resumed it, what work is active, what must happen before merge or closeout, and whether the branch should be deleted or intentionally retained.
 Legacy branches opened before this workflow may still need manual backfill; use `TODO: verify` instead of guessing until those entries are added.
+
+### `cursor/drift-discovery-d2e1`
+- status: open
+- created: 2026-10-01
+- source chat: cloud agent `bc-ce7bf3da-01cd-5e6a-af25-292ef1b0d2e1` (Foreman ops reliability pass)
+- last refreshed by chat: 2026-10-01
+- purpose: tighten foreman drift-check downstream repo auto-discovery and add regression tests
+- linked issue: `self-contained:` internal governance tooling improvement
+- merge expectation: merge to `main` after draft PR review
+- exit checklist:
+  - [x] Discovery module and drift-check wiring
+  - [x] `scripts/test-drift-discovery.py` and CI job step
+  - [ ] Hosted CI green on PR
+  - [ ] Draft PR opened
+- delete when: after merge to `main`
+
 Each active branch entry should include:
 - `source chat`
 - `last refreshed by chat`
@@ -171,6 +187,10 @@ Each active branch entry should include:
 - When a verification run closes or updates an audit finding, cross-reference the matching audit record entry and the chat or commit that performed the work.
 
 ## Test Evidence Log
+- date: 2026-10-01
+  command(s): `python3 scripts/test-drift-discovery.py`; `python3 -m py_compile scripts/foreman_drift_discovery.py`; `bash -n scripts/foreman-drift-check.sh`
+  result: pass — discovery excludes `.claude`, Desktop, and Cursor plugin paths while retaining governed project repos with foreman markers
+  log/PR reference: branch `cursor/drift-discovery-d2e1`; cloud agent `bc-ce7bf3da-01cd-5e6a-af25-292ef1b0d2e1`
 - date: 2026-08-15
   command(s): `python3 scripts/test-classify.py`; `bash scripts/test-dispatch.sh`; `bash scripts/test-hooks.sh`; `python3 scripts/test-review.py`; Bash syntax; Python compile; workflow YAML parse; `git diff --check`
   result: pass — provider failures fall back safely, dispatcher and hook base selection prefer current `origin/main`, author provenance is preserved, secure temporary paths are used, and fail-closed review returns exit code 2
