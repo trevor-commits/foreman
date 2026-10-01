@@ -2,7 +2,6 @@
 
 ## Active Next Steps
 Capture the current goal plus the concrete dependency-ordered steps that are still open.
-- [Governance] Tighten `scripts/foreman-drift-check.sh` repo discovery so non-project `CLAUDE.md` locations such as `~/.claude`, `~/Desktop`, and editor extensions are excluded by default.
 - [MCP] Validate `scripts/foreman-mcp-server.py` from a real Claude Code or Claude desktop MCP client session and confirm stdio transport plus tool registration work end to end.
 - [CI] Run the fixed `test-foreman-tooling.yml` on a real GitHub-hosted runner and confirm both jobs pass outside local YAML parsing and local shell checks.
 - [Phase 2.1] Continue the reviewer `BLOCKER` burn-in and decide whether the default should flip to a hard gate after 2026-04-24.
@@ -17,6 +16,7 @@ Capture the current goal plus the concrete dependency-ordered steps that are sti
 
 ## Completed
 Preserve a durable completion trail for verified work instead of deleting it from active planning.
+- Completed 2026-10-01: Tightened `scripts/foreman-drift-check.sh` auto-discovery via `scripts/foreman_drift_discovery.py` (excludes `~/.claude`, Desktop, Cursor plugin caches; requires git repos with foreman governance markers); added `scripts/test-drift-discovery.py` and CI coverage | priority: P1 | owner: Trevor Gillette | target date: 2026-10-01
 - [x] 2026-04-16: backfilled the local durable trail for the `GIL-37` repo-principles rollout so this repo now records why the shared Continuity / Coherence / Linear-Core surfaces landed here instead of leaving that explanation only in the coordinating repo.
 
 - Completed 2026-04-11: Audited all 10 Phase 2.1+ deliverables, fixed the invalid `test-foreman-tooling.yml` YAML, moved the real FastMCP server implementation into `scripts/foreman-mcp-server.py`, and simplified smoke checks to import the executable script directly | priority: P1 | owner: Trevor Gillette | target date: 2026-04-11
