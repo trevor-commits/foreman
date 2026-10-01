@@ -193,8 +193,30 @@ env = run_steps[0].get("env") or {}
 assert env.get("FOREMAN_VERIFY_INSTALL") == "1", (
     "test-foreman-tooling.yml: FOREMAN_VERIFY_INSTALL=1 required for hosted parity"
 )
+setup_steps = [
+    s
+    for s in steps
+    if isinstance(s, dict) and s.get("uses", "").startswith("actions/setup-python")
+]
+assert setup_steps, "test-foreman-tooling.yml: missing actions/setup-python step"
+py_with = setup_steps[0].get("with") or {}
+assert py_with.get("python-version") == "3.12", (
+    "test-foreman-tooling.yml: python-version must stay 3.12 for hosted parity"
+)
+checkout_steps = [
+    s for s in steps if isinstance(s, dict) and s.get("uses", "").startswith("actions/checkout")
+]
+assert checkout_steps, "test-foreman-tooling.yml: missing actions/checkout step"
 print("    test-foreman-tooling.yml: CI parity contract OK")
 PY
+
+echo "▸ operator doc cross-links"
+for doc in docs/LOCAL_VERIFY.md README.md scripts/README.md .github/VALIDATION_CHECKLIST.md; do
+  if ! grep -q 'LOCAL_VERIFY.md' "$doc" 2>/dev/null; then
+    echo "verify: $doc must reference docs/LOCAL_VERIFY.md" >&2
+    exit 1
+  fi
+done
 
 echo ""
 echo "✅  foreman verify passed"

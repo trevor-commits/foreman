@@ -18,7 +18,22 @@ Run from the **repository root**:
 
 **Success:** final line is `✅  foreman verify passed` and exit code `0`.
 
-**This pass (cloud agent `bc-18e528a6-ccb8-504c-a3d2-6dde6a37dffc`):** steps 1–3 — **pass**.
+**Failure:** any step prints an error and exits `1` — fix the reported step and re-run step 2.
+
+**This pass (cloud agent `bc-552fe519-19f4-5c20-aee1-ede8e07c9827`):** steps 1–3 — **pass** (~40s on a fresh cloud image after pip install).
+
+### Copy-paste block (offline after deps)
+
+```bash
+cd "$(git rev-parse --show-toplevel)"
+FOREMAN_VERIFY_INSTALL=1 bash scripts/verify.sh   # once per machine / after requirements change
+bash scripts/verify.sh && make verify             # every change before push
+```
+
+### Expected noise (not failures)
+
+`scripts/test-review.py` may print `Reviewer error: OPENAI_API_KEY is not set` on stderr while
+offline cases still report `PASS:` — verify does **not** require API keys.
 
 ### macOS / PEP 668
 
@@ -62,7 +77,8 @@ API keys (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`) are **not** read by `verify.sh`
 | `scripts/test-hooks.sh` | Temp-repo `commit-msg` + `pre-push` trailer behavior |
 | `scripts/test-dispatch.sh` | Dispatcher branch/base selection |
 | MCP shim / server smoke | Tool registration without starting a server |
-| Workflow YAML checks | `foreman-trailer-check.yml` + **CI parity** for `test-foreman-tooling.yml` |
+| Workflow YAML checks | `foreman-trailer-check.yml` + **CI parity** for `test-foreman-tooling.yml` (checkout, Python 3.12, env) |
+| Operator doc cross-links | `README.md`, `scripts/README.md`, `VALIDATION_CHECKLIST.md` reference `docs/LOCAL_VERIFY.md` |
 
 ## CI parity contract
 
@@ -72,7 +88,8 @@ Hosted `test-foreman-tooling.yml` must stay a thin wrapper:
 2. Python 3.12 (`actions/setup-python@v5`)
 3. `FOREMAN_VERIFY_INSTALL=1 bash scripts/verify.sh`
 
-`verify.sh` asserts this shape so local and GitHub cannot drift silently. Local Python may differ from 3.12; verify prints a note when it does.
+`verify.sh` asserts this shape (including `python-version: "3.12"` and a single `verify.sh` run step)
+so local and GitHub cannot drift silently. Local Python may differ from 3.12; verify prints a note when it does.
 
 ## Not covered by verify (human / hosted)
 
@@ -93,7 +110,9 @@ Surveyed **open drafts only** — no merges, no API keys, no secrets in docs.
 | [#7](https://github.com/trevor-commits/foreman/pull/7) | `cursor/usage-burn-reliability-741a` | `scripts/verify.sh`, `Makefile`, pre-push self-check, CI → verify, `docs/LOCAL_VERIFY.md` | Land **first** — defines verify contract |
 | [#6](https://github.com/trevor-commits/foreman/pull/6) | `cursor/drift-discovery-d2e1` | `foreman-drift-check` discovery hardening + `test-drift-discovery.py` | Touches `test-foreman-tooling.yml`, `scripts/README.md`, `todo.md` — **rebase on #7** |
 
-**Recommendation:** Merge reliability/verify (#7) before drift-discovery (#6). After #7, add drift-discovery tests to `verify.sh` in a follow-up if #6 introduces new offline coverage.
+**Recommendation:** Merge reliability/verify (#7) before drift-discovery (#6). After #7 lands, rebase #6 and wire `scripts/test-drift-discovery.py` into `verify.sh` (today #6 runs it only in its own workflow copy).
+
+**Constraints for this burn:** draft-only, no merge, no live API keys, no `foreman-drift-check.sh` against real `$HOME` trees.
 
 ## Troubleshooting
 
