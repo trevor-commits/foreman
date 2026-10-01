@@ -172,6 +172,10 @@ Each active branch entry should include:
 
 ## Test Evidence Log
 - date: 2026-10-01
+  command(s): `FOREMAN_VERIFY_INSTALL=1 bash scripts/verify.sh`; `bash scripts/verify.sh`; `make verify` (deeper pass 2 — test script bash/py coverage, Makefile/pre-push wiring asserts, user-site PATH)
+  result: pass — offline verify on PR #7 branch `cursor/usage-burn-reliability-741a`; agent `bc-18e528a6-ccb8-504c-a3d2-6dde6a37dffc`
+  log/PR reference: draft PR #7
+- date: 2026-10-01
   command(s): `FOREMAN_VERIFY_INSTALL=1 bash scripts/verify.sh`; `bash scripts/verify.sh` (deeper pass — venv PATH, workflow CI-parity assert)
   result: pass — verify enforces `test-foreman-tooling.yml` → `verify.sh` delegation; docs in `docs/LOCAL_VERIFY.md`
   log/PR reference: PR #7; cloud agent `bc-91855acc-e9de-5d6b-bcbf-05233bba7a7d`

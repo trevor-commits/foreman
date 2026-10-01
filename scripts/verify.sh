@@ -24,6 +24,8 @@ cd "$ROOT_DIR"
 # Prefer an in-repo venv when present (common on macOS / PEP 668 systems).
 if [[ -x "$ROOT_DIR/.venv/bin/python3" ]]; then
   export PATH="$ROOT_DIR/.venv/bin:$PATH"
+elif [[ -d "${HOME}/.local/bin" ]]; then
+  export PATH="${HOME}/.local/bin:${PATH}"
 fi
 
 require_python() {
@@ -44,6 +46,10 @@ ensure_deps() {
   if [[ "${FOREMAN_VERIFY_INSTALL:-}" == "1" ]]; then
     echo "verify: installing Python deps from scripts/requirements.txt ..."
     python3 -m pip install -r scripts/requirements.txt
+    # User-site installs (PEP 668 / cloud images) put console scripts under ~/.local/bin.
+    if [[ -d "${HOME}/.local/bin" ]]; then
+      export PATH="${HOME}/.local/bin:${PATH}"
+    fi
     if deps_satisfied; then
       return 0
     fi
@@ -72,6 +78,12 @@ echo ""
 require_python
 ensure_deps
 
+PY_VERSION="$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')"
+echo "    python: $PY_VERSION (hosted CI uses 3.12)"
+if ! python3 -c 'import sys; sys.exit(0 if sys.version_info[:2] == (3, 12) else 1)' 2>/dev/null; then
+  echo "    note: local Python differs from GitHub Actions 3.12 — re-run verify before merge if you hit version-specific failures"
+fi
+
 echo "▸ bash syntax — hooks and shell scripts"
 bash -n hooks/pre-push
 bash -n hooks/commit-msg
@@ -83,13 +95,32 @@ bash -n scripts/foreman-merge-check.sh
 bash -n scripts/foreman-drift-check.sh
 bash -n scripts/foreman-pr-prep.sh
 bash -n scripts/verify.sh
+bash -n scripts/test-hooks.sh
+bash -n scripts/test-dispatch.sh
+bash -n scripts/test-review.sh
 
-echo "▸ python compile — governance scripts"
+echo "▸ python compile — governance and test scripts"
 python3 -m py_compile scripts/foreman-review.py
 python3 -m py_compile scripts/foreman-classify.py
 python3 -m py_compile scripts/foreman-mcp-shim.py
 python3 -m py_compile scripts/foreman-mcp-server.py
 python3 -m py_compile scripts/foreman-calibration.py
+python3 -m py_compile scripts/test-classify.py
+python3 -m py_compile scripts/test-review.py
+
+echo "▸ Makefile / pre-push wiring"
+if ! make -n verify >/dev/null 2>&1; then
+  echo "verify: Makefile must define a dry-runnable 'verify' target" >&2
+  exit 1
+fi
+if ! grep -q 'scripts/verify.sh' Makefile; then
+  echo "verify: Makefile 'verify' target must invoke scripts/verify.sh" >&2
+  exit 1
+fi
+if ! grep -q 'scripts/verify.sh' hooks/pre-push; then
+  echo "verify: hooks/pre-push must run scripts/verify.sh when the template self-check is enabled" >&2
+  exit 1
+fi
 
 echo "▸ reviewer smoke tests"
 python3 scripts/test-review.py
